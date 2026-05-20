@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Portfolio Risk Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<h1 class="main-title">AI Portfolio Risk Dashboard</h1>
+
+<div class="container">
+
+<!-- TOP STATS -->
+
+<div class="top-stats">
+
+<div class="top-card">
+
+<div class="top-icon-box purple">
+<i class="fa-solid fa-users"></i>
+</div>
+
+<div class="top-card-content">
+<h3>Total Clients</h3>
+<p>100</p>
+<span>Active Portfolios</span>
+</div>
+
+</div>
+
+<div class="top-card">
+
+<div class="top-icon-box green">
+<i class="fa-solid fa-wallet"></i>
+</div>
+
+<div class="top-card-content">
+<h3>Total Portfolio Value</h3>
+<p>₹2,87,50,000</p>
+<span>Across All Portfolios</span>
+</div>
+
+</div>
+
+<div class="top-card">
+
+<div class="top-icon-box orange">
+<i class="fa-solid fa-chart-line"></i>
+</div>
+
+<div class="top-card-content">
+<h3>Market Overview</h3>
+<p style="color:lime;">+1.25%</p>
+<span>Nifty 50 Today</span>
+</div>
+
+</div>
+
+<div class="top-card">
+
+<div class="top-icon-box red">
+<i class="fa-solid fa-shield-halved"></i>
+</div>
+
+<div class="top-card-content">
+<h3>High Risk Portfolios</h3>
+<p style="color:red;">28</p>
+<span>Needs Attention</span>
+</div>
+
+</div>
+
+<div class="top-card">
+
+<div class="top-icon-box blue">
+<i class="fa-solid fa-robot"></i>
+</div>
+
+<div class="top-card-content">
+<h3>AI Insights</h3>
+<p style="color:cyan;">Active</p>
+<span>Monitoring 24/7</span>
+</div>
+
+</div>
+
+</div>
+
+<!-- DASHBOARD GRID -->
+
+<div class="dashboard-grid">
+
+<!-- PORTFOLIO SERVICE -->
+
+<div class="card">
+
+<h2>
+<i class="fa-solid fa-briefcase service-icon"></i>
+Portfolio Service
+</h2>
+
+<div id="portfolio-data">
+
+<p class="loading-text">
+Loading portfolio data...
+</p>
+
+</div>
+
+</div>
+
+<!-- MARKET DATA -->
+
+<div class="card">
+
+<h2>
+<i class="fa-solid fa-chart-line service-icon"></i>
+Market Data Service
+</h2>
+
+<div id="market-data">
+
+<p class="loading-text">
+Loading market data...
+</p>
+
+</div>
+
+</div>
+
+<!-- RISK ANALYSIS -->
+
+<div class="card">
+
+<h2>
+<i class="fa-solid fa-shield-halved service-icon"></i>
+Risk Analysis Service
+</h2>
+
+<div id="risk-data">
+
+<!-- ORIGINAL STYLE PRESERVED -->
+
+<div class="service-item risk-card">
+
+<h3 style="color:cyan;">
+
+<div class="service-item-icon-box purple-icon">
+<i class="fa-solid fa-user-shield"></i>
+</div>
+
+Select a Client
+
+</h3>
+
+<p>
+Click a client portfolio to generate AI-powered risk analysis.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- AI SUMMARY -->
+
+<div class="ai-summary-card">
+
+<h2>AI Insight Summary</h2>
+
+<p id="ai-summary">
+AI is analyzing portfolio health...
+</p>
+
+<h3 id="health-status">
+Portfolio Health: ANALYZING...
+</h3>
+
+<p id="allocation-drift">
+Allocation Drift Status: Monitoring...
+</p>
+
+<p id="stock-exposure">
+Stock Exposure Status: Monitoring...
+</p>
+
+<p id="daily-drop">
+Daily Portfolio Drop Status: Monitoring...
+</p>
+
+<!-- ALERT BOX -->
+
+<div id="alert-box">
+
+<h3 id="alert-toggle">
+Risk Alerts ▼
+</h3>
+
+<ul id="alert-list">
+
+<li>
+Monitoring portfolio risk events...
+</li>
+
+</ul>
+
+</div>
+
+<!-- LAST UPDATED -->
+
+<p id="last-updated">
+Last Updated: Monitoring...
+</p>
+
+<!-- HEALTH SCORE -->
+
+<h3 id="health-score">
+AI Health Score: Calculating...
+</h3>
+
+<!-- AI RECOMMENDATION -->
+
+<div id="ai-recommendation">
+AI Recommendation Engine Initializing...
+</div>
+
+<!-- RISK METER -->
+
+<div class="risk-meter-container">
+
+<h3>AI Risk Meter</h3>
+
+<div class="risk-meter">
+
+<div class="risk-fill"></div>
+
+</div>
+
+<p id="risk-percentage">
+Risk Score: 0%
+</p>
+
+</div>
+
+<!-- ENGINE STATUS -->
+
+<div class="engine-status-container">
+
+<div class="status-dot"></div>
+
+<p id="ai-engine-status">
+AI Engine Status: ACTIVE
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

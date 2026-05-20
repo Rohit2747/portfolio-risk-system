@@ -1,0 +1,7 @@
+{
+  "eventType": "MarketDataUpdatedEvent",
+  "stockName": "Amazon",
+  "latestPrice": 1520.50,
+  "percentageChange": 2.4,
+  "timestamp": "2026-05-20T10:30:00"
+}

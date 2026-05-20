@@ -1,0 +1,7 @@
+{
+  "eventType": "RiskAlertEvent",
+  "portfolioName": "Tech Growth Portfolio",
+  "riskLevel": "HIGH",
+  "alertMessage": "Portfolio exposure exceeded risk threshold.",
+  "timestamp": "2026-05-20T12:30:00"
+}
