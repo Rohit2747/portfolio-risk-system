@@ -53,13 +53,25 @@ let allMarketData  = [];   // market prices from /market-data
 let selectedClient = null; // currently selected portfolio card
 
 // ---------------------------------------------------------------
-// FETCH: Portfolio Data (port 8080)
+// FETCH: Portfolio Data (port 8080) — enriched with Risk Data
 // ---------------------------------------------------------------
 async function loadPortfolioData() {
   try {
     const response = await fetch(`${PORTFOLIO_SERVICE_URL}/portfolios`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const portfolios = await response.json();
+
+    // Enrich portfolio cards with risk data (value + risk level)
+    if (allRiskData && allRiskData.length > 0) {
+      portfolios.forEach(p => {
+        const riskInfo = allRiskData.find(r => r.clientId === p.clientId);
+        if (riskInfo) {
+          p.portfolioValue = riskInfo.totalPortfolioValue || 0;
+          p.riskLevel = riskInfo.riskLevel || "UNKNOWN";
+        }
+      });
+    }
+
     renderPortfolioCards(portfolios);
   } catch (err) {
     document.getElementById("portfolio-data").innerHTML =
@@ -70,14 +82,15 @@ async function loadPortfolioData() {
 function renderPortfolioCards(portfolios) {
   let html = "";
   portfolios.forEach(p => {
-    const riskClass  = (p.riskLevel || "UNKNOWN").toLowerCase();
+    const riskLevel  = p.riskLevel || "UNKNOWN";
+    const riskClass  = riskLevel.toLowerCase();
     const value      = p.portfolioValue > 0
       ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
-      : "Loading...";
+      : "Calculating...";
 
     html += `
       <div class="service-item portfolio-card"
-           onclick="selectClient(${p.clientId}, '${p.clientName}', '${p.riskLevel || "UNKNOWN"}', ${p.portfolioValue || 0}, event)">
+           onclick="selectClient(${p.clientId}, '${p.clientName}', '${riskLevel}', ${p.portfolioValue || 0}, event)">
         <div>
           <h3>
             <div class="service-item-icon-box purple-icon">
@@ -86,7 +99,7 @@ function renderPortfolioCards(portfolios) {
             ${p.clientName}
           </h3>
           <p>Total Value: ${value}</p>
-          <p>Risk Level: <span class="${riskClass}">${p.riskLevel || "CALCULATING..."}</span></p>
+          <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
         </div>
       </div>`;
   });
@@ -503,14 +516,14 @@ function buildLocalInsight(riskData) {
 // AUTO-REFRESH TIMERS
 // ---------------------------------------------------------------
 
-// Market data: every 5 seconds (matches backend simulation interval)
-setInterval(loadMarketData, 5000);
-
-// Risk analysis: every 10 seconds (slightly slower — heavier computation)
+// Risk analysis: every 10 seconds (loads first, enriches portfolio cards)
 setInterval(loadRiskAnalysis, 10000);
 
-// Portfolio list: every 30 seconds (changes less frequently)
-setInterval(loadPortfolioData, 30000);
+// Portfolio list: every 12 seconds (after risk data refreshes)
+setInterval(loadPortfolioData, 12000);
+
+// Market data: every 5 seconds (matches backend simulation interval)
+setInterval(loadMarketData, 5000);
 
 // Timestamp: every second
 function updateTimestamp() {
@@ -552,8 +565,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // INITIAL LOAD — load all data on page start
-  loadPortfolioData();
+  // Risk data loads first so portfolio cards can be enriched
   loadMarketData();
-  loadRiskAnalysis();
+  loadRiskAnalysis().then(() => {
+    loadPortfolioData();
+  });
   updateTimestamp();
 });
