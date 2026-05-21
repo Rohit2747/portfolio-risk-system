@@ -1,5 +1,6 @@
 package com.incedo.market_data_service.service;
 
+import com.incedo.market_data_service.events.PriceEventPublisher;
 import com.incedo.market_data_service.model.marketData;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *   - Opening price is fixed at service startup (simulates day open)
  *   - Tracks both tick-change% and daily-change%
  *   - Some volatile stocks (NVDA, TSLA, META) have higher variance
- *
- * This simulates the "Market Data Service publishes PriceUpdated events" requirement.
- * The @Scheduled method acts as the event trigger.
+ *   - After each tick, publishes PriceUpdatedEvent to SNS (AWS mode)
+ *     or logs locally (local mode)
  */
 @Service
 public class PriceSimulatorService {
@@ -61,28 +61,31 @@ public class PriceSimulatorService {
     private final Map<String, marketData> priceMap = new ConcurrentHashMap<>();
 
     private final Random random = new Random();
+    private final PriceEventPublisher priceEventPublisher;
+
+    public PriceSimulatorService(PriceEventPublisher priceEventPublisher) {
+        this.priceEventPublisher = priceEventPublisher;
+        initializePrices();
+    }
 
     /**
      * Initializes all 20 stocks with their base prices at service startup.
-     * Opening prices are recorded here for daily-change calculation.
+     * Called from constructor so initialization happens immediately.
      */
     public PriceSimulatorService() {
+        this(null);
+    }
+
+    private void initializePrices() {
         String startTime = LocalDateTime.now().format(FORMATTER);
-
         for (Object[] config : EQUITY_CONFIG) {
-            String symbol     = (String) config[0];
-            String name       = (String) config[1];
-            double basePrice  = (Double) config[2];
-
+            String symbol    = (String) config[0];
+            String name      = (String) config[1];
+            double basePrice = (Double) config[2];
             priceMap.put(symbol, new marketData(
-                symbol,
-                name,
-                basePrice,      // currentPrice
-                basePrice,      // openingPrice (fixed)
-                basePrice,      // previousPrice
-                0.0,            // changePercent (tick)
-                0.0,            // dailyChangePercent
-                startTime
+                symbol, name,
+                basePrice, basePrice, basePrice,
+                0.0, 0.0, startTime
             ));
         }
     }
@@ -92,43 +95,43 @@ public class PriceSimulatorService {
      * Updates currentPrice with realistic random walk.
      * Updates change% and dailyChange%.
      *
-     * This is the event source — equivalent to publishing a PriceUpdatedEvent.
-     * In the AWS version, this method will publish to SNS.
+     * After updating prices, publishes PriceUpdatedEvent:
+     *   - LOCAL mode: logs occasionally to console
+     *   - AWS mode:   publishes to SNS topic "price-updated"
      */
     @Scheduled(fixedDelay = 5000)
     public void simulatePriceTick() {
         String now = LocalDateTime.now().format(FORMATTER);
 
         for (Object[] config : EQUITY_CONFIG) {
-            String symbol    = (String) config[0];
-            double vol       = (Double) config[3];
+            String symbol = (String) config[0];
+            double vol    = (Double) config[3];
 
             marketData current = priceMap.get(symbol);
             if (current == null) continue;
 
-            double prev     = current.getCurrentPrice();
-            double opening  = current.getOpeningPrice();
+            double prev    = current.getCurrentPrice();
+            double opening = current.getOpeningPrice();
 
-            // Random walk: +/- vol% swing
             double change   = (random.nextDouble() * 2 - 1) * vol;
             double newPrice = Math.round(prev * (1 + change) * 100.0) / 100.0;
-
-            // Prevent price going below 10% of base price (floor)
             if (newPrice < opening * 0.10) newPrice = opening * 0.10;
 
             double tickChange  = Math.round(((newPrice - prev) / prev * 100) * 100.0) / 100.0;
             double dailyChange = Math.round(((newPrice - opening) / opening * 100) * 100.0) / 100.0;
 
-            priceMap.put(symbol, new marketData(
-                symbol,
-                current.getStockName(),
-                newPrice,
-                opening,        // opening price stays fixed all day
-                prev,           // previous price = what it was before this tick
-                tickChange,
-                dailyChange,
-                now
-            ));
+            marketData updated = new marketData(
+                symbol, current.getStockName(),
+                newPrice, opening, prev,
+                tickChange, dailyChange, now
+            );
+
+            priceMap.put(symbol, updated);
+
+            // Publish PriceUpdated event (SNS in AWS mode, console in local mode)
+            if (priceEventPublisher != null) {
+                priceEventPublisher.publishPriceUpdate(updated);
+            }
         }
     }
 
