@@ -32,29 +32,31 @@ public class PriceSimulatorService {
 
     // ---------------------------------------------------------------
     // 20 Equities: { symbol, name, basePrice, volatility }
-    // volatility: max % swing per tick (0.02 = 2%)
+    // volatility: max % swing per tick (realistic: 0.002 = 0.2%)
+    // Realistic daily volatility for stocks is ~1-3% total
+    // With ticks every 5s, each tick should be ~0.1-0.3% max
     // ---------------------------------------------------------------
     private static final Object[][] EQUITY_CONFIG = {
-        { "AAPL",       "Apple Inc.",            187.50,  0.015 },
-        { "MSFT",       "Microsoft Corp.",       415.20,  0.012 },
-        { "NVDA",       "NVIDIA Corp.",          875.40,  0.035 },  // high vol
-        { "AMZN",       "Amazon.com Inc.",       182.30,  0.018 },
-        { "GOOGL",      "Alphabet Inc.",         175.60,  0.015 },
-        { "META",       "Meta Platforms",        505.80,  0.025 },  // high vol
-        { "TSLA",       "Tesla Inc.",            172.40,  0.040 },  // highest vol
-        { "RELIANCE",   "Reliance Industries",  2985.50,  0.012 },
-        { "HDFCBANK",   "HDFC Bank",            1678.90,  0.010 },
-        { "INFY",       "Infosys Ltd.",           183.25,  0.015 },
-        { "TCS",        "TCS Ltd.",             3912.00,  0.010 },
-        { "WIPRO",      "Wipro Ltd.",             538.60,  0.015 },
-        { "ICICIBANK",  "ICICI Bank",            1087.30,  0.012 },
-        { "SBIN",       "State Bank of India",    815.70,  0.018 },
-        { "BAJFINANCE", "Bajaj Finance",         7285.40,  0.022 },
-        { "ASIANPAINT", "Asian Paints",          2895.60,  0.012 },
-        { "HINDUNILVR", "Hindustan Unilever",    2534.80,  0.008 },
-        { "KOTAKBANK",  "Kotak Mahindra Bank",   1834.20,  0.012 },
-        { "LT",         "Larsen & Toubro",       3478.90,  0.015 },
-        { "SUNPHARMA",  "Sun Pharmaceutical",    1567.30,  0.018 }
+        { "AAPL",       "Apple Inc.",            187.50,  0.003 },
+        { "MSFT",       "Microsoft Corp.",       415.20,  0.0025 },
+        { "NVDA",       "NVIDIA Corp.",          875.40,  0.006 },   // high vol
+        { "AMZN",       "Amazon.com Inc.",       182.30,  0.004 },
+        { "GOOGL",      "Alphabet Inc.",         175.60,  0.003 },
+        { "META",       "Meta Platforms",        505.80,  0.005 },   // high vol
+        { "TSLA",       "Tesla Inc.",            172.40,  0.008 },   // highest vol
+        { "RELIANCE",   "Reliance Industries",  2985.50,  0.0025 },
+        { "HDFCBANK",   "HDFC Bank",            1678.90,  0.002 },
+        { "INFY",       "Infosys Ltd.",           183.25,  0.003 },
+        { "TCS",        "TCS Ltd.",             3912.00,  0.002 },
+        { "WIPRO",      "Wipro Ltd.",             538.60,  0.003 },
+        { "ICICIBANK",  "ICICI Bank",            1087.30,  0.0025 },
+        { "SBIN",       "State Bank of India",    815.70,  0.004 },
+        { "BAJFINANCE", "Bajaj Finance",         7285.40,  0.005 },
+        { "ASIANPAINT", "Asian Paints",          2895.60,  0.0025 },
+        { "HINDUNILVR", "Hindustan Unilever",    2534.80,  0.0015 },
+        { "KOTAKBANK",  "Kotak Mahindra Bank",   1834.20,  0.0025 },
+        { "LT",         "Larsen & Toubro",       3478.90,  0.003 },
+        { "SUNPHARMA",  "Sun Pharmaceutical",    1567.30,  0.004 }
     };
 
     // In-memory price store: symbol -> current marketData
