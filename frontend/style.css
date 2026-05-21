@@ -772,3 +772,36 @@ to{
 opacity:1;
 }
 }
+
+
+
+/* ---------------------------------------------------------------
+   CLIENT AVATAR STYLES
+   --------------------------------------------------------------- */
+
+.client-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
+  flex-shrink: 0;
+  transition: 0.3s;
+}
+
+.client-avatar:hover {
+  border-color: cyan;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.client-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.25);
+  flex-shrink: 0;
+}

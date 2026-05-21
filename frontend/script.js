@@ -79,6 +79,15 @@ async function loadPortfolioData() {
   }
 }
 
+/**
+ * Generates a deterministic avatar URL for a client.
+ * Same clientId always returns the same photo.
+ * Uses pravatar.cc — free, realistic AI-style human photos.
+ */
+function getClientAvatar(clientId) {
+  return `https://i.pravatar.cc/80?img=${(clientId % 70) + 1}`;
+}
+
 function renderPortfolioCards(portfolios) {
   let html = "";
   portfolios.forEach(p => {
@@ -87,19 +96,19 @@ function renderPortfolioCards(portfolios) {
     const value      = p.portfolioValue > 0
       ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
       : "Calculating...";
+    const avatar     = getClientAvatar(p.clientId);
 
     html += `
       <div class="service-item portfolio-card"
            onclick="selectClient(${p.clientId}, '${p.clientName}', '${riskLevel}', ${p.portfolioValue || 0}, event)">
-        <div>
-          <h3>
-            <div class="service-item-icon-box purple-icon">
-              <i class="fa-solid fa-user"></i>
-            </div>
-            ${p.clientName}
-          </h3>
-          <p>Total Value: ${value}</p>
-          <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <img src="${avatar}" class="client-avatar"
+               onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+          <div>
+            <h3 style="margin:0;">${p.clientName}</h3>
+            <p>Total Value: ${value}</p>
+            <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
+          </div>
         </div>
       </div>`;
   });
@@ -390,6 +399,7 @@ function renderRiskPanel(riskData) {
   const value     = (riskData.totalPortfolioValue || 0)
     .toLocaleString("en-IN", {maximumFractionDigits: 2});
   const daily     = (riskData.dailyChangePercent || 0).toFixed(2);
+  const avatar    = getClientAvatar(riskData.clientId);
 
   let breachesHtml = "";
   if (riskData.breaches && riskData.breaches.length > 0) {
@@ -410,9 +420,8 @@ function renderRiskPanel(riskData) {
     <div class="service-item risk-card">
       <div class="risk-top">
         <div class="risk-left">
-          <div class="risk-icon-box">
-            <i class="fa-solid ${icon}"></i>
-          </div>
+          <img src="${avatar}" class="client-avatar-large"
+               onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
           <div class="risk-info">
             <h3>${riskData.clientName}</h3>
             <p>Value: ₹${value}</p>
