@@ -1,781 +1,559 @@
+/* ================================================================
+   AI Portfolio Risk Dashboard — script.js
+   Fetches REAL data from all 4 backend microservices.
+   No hardcoded values. All data is live from APIs.
+   ================================================================ */
+
+// ---------------------------------------------------------------
+// SERVICE URLS — change these if running on different ports
+// ---------------------------------------------------------------
+const PORTFOLIO_SERVICE_URL  = "http://localhost:8080";
+const MARKET_DATA_SERVICE_URL = "http://localhost:8081";
+const RISK_SERVICE_URL       = "http://localhost:8082";
+const AI_INSIGHT_SERVICE_URL = "http://localhost:8083";
+
+// ---------------------------------------------------------------
+// COMPANY LOGOS
+// ---------------------------------------------------------------
 const companyLogos = {
-
-"NVIDIA":"images/nvidia.png",
-
-"Apple":"images/apple.png",
-
-"Microsoft":"images/microsoft.jpeg",
-
-"Reliance":"images/reliance.png",
-
-"HDFC":"images/hdfc.png",
-
-"Amazon":"images/amazon.png"
-
+  "AAPL":        "images/apple.png",
+  "MSFT":        "images/microsoft.jpeg",
+  "NVDA":        "images/NVIDIA.png",
+  "AMZN":        "images/amazon.png",
+  "GOOGL":       "images/amazon.png",
+  "META":        "images/amazon.png",
+  "TSLA":        "images/apple.png",
+  "RELIANCE":    "images/reliance.png",
+  "HDFCBANK":    "images/hdfc.png",
+  "INFY":        "images/reliance.png",
+  "TCS":         "images/hdfc.png",
+  "WIPRO":       "images/hdfc.png",
+  "ICICIBANK":   "images/hdfc.png",
+  "SBIN":        "images/hdfc.png",
+  "BAJFINANCE":  "images/hdfc.png",
+  "ASIANPAINT":  "images/reliance.png",
+  "HINDUNILVR":  "images/reliance.png",
+  "KOTAKBANK":   "images/hdfc.png",
+  "LT":          "images/reliance.png",
+  "SUNPHARMA":   "images/reliance.png",
+  // Legacy names (fallback)
+  "Apple":       "images/apple.png",
+  "Microsoft":   "images/microsoft.jpeg",
+  "NVIDIA":      "images/NVIDIA.png",
+  "Amazon":      "images/amazon.png",
+  "Reliance":    "images/reliance.png",
+  "HDFC":        "images/hdfc.png"
 };
 
-/* LOAD PORTFOLIO DATA */
+// ---------------------------------------------------------------
+// GLOBAL STATE
+// ---------------------------------------------------------------
+let allRiskData    = [];   // full risk analysis from /risk-analysis
+let allMarketData  = [];   // market prices from /market-data
+let selectedClient = null; // currently selected portfolio card
 
-async function loadPortfolioData(){
-
-const response=await fetch("http://localhost:8080/portfolios");
-
-const data=await response.json();
-
-let output="";
-
-data.forEach(portfolio=>{
-
-output+=`
-
-<div class="service-item portfolio-card"
-onclick="selectClient(
-'${portfolio.clientName || portfolio.name}',
-'${portfolio.riskLevel}',
-${portfolio.portfolioValue},
-event
-)">
-
-<div>
-
-<h3>
-
-<div class="service-item-icon-box purple-icon">
-<i class="fa-solid fa-user"></i>
-</div>
-
-${portfolio.clientName || portfolio.name}
-
-</h3>
-
-<p>Total Value: ₹${portfolio.portfolioValue}</p>
-
-<p>
-Risk Level:
-<span class="${portfolio.riskLevel.toLowerCase()}">
-${portfolio.riskLevel}
-</span>
-</p>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-document.getElementById("portfolio-data").innerHTML=output;
-
+// ---------------------------------------------------------------
+// FETCH: Portfolio Data (port 8080)
+// ---------------------------------------------------------------
+async function loadPortfolioData() {
+  try {
+    const response = await fetch(`${PORTFOLIO_SERVICE_URL}/portfolios`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const portfolios = await response.json();
+    renderPortfolioCards(portfolios);
+  } catch (err) {
+    document.getElementById("portfolio-data").innerHTML =
+      `<p style="color:red">⚠ Portfolio Service unavailable. Start service on port 8080.<br><small>${err.message}</small></p>`;
+  }
 }
 
-/* LOAD MARKET DATA */
+function renderPortfolioCards(portfolios) {
+  let html = "";
+  portfolios.forEach(p => {
+    const riskClass  = (p.riskLevel || "UNKNOWN").toLowerCase();
+    const value      = p.portfolioValue > 0
+      ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
+      : "Loading...";
 
-async function loadMarketData(){
-
-const response=await fetch("http://localhost:8081/market-data");
-
-const marketData=await response.json();
-
-let output="";
-
-marketData.forEach(market=>{
-
-output+=`
-
-<div class="service-item market-card">
-
-<div class="market-left">
-
-<div class="service-item-icon-box market-logo-box">
-
-<img
-src="${companyLogos[market.stockName]}"
-class="company-logo"
-onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
->
-
-</div>
-
-<div>
-
-<h3>${market.stockName || market.symbol}</h3>
-
-<p>Price: ₹${market.price}</p>
-
-</div>
-
-</div>
-
-<div class="market-right">
-
-<p class="${
-market.change > 0 ? 'positive' : 'negative'
-}">
-${market.change}%
-</p>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-document.getElementById("market-data").innerHTML=output;
-
+    html += `
+      <div class="service-item portfolio-card"
+           onclick="selectClient(${p.clientId}, '${p.clientName}', '${p.riskLevel || "UNKNOWN"}', ${p.portfolioValue || 0}, event)">
+        <div>
+          <h3>
+            <div class="service-item-icon-box purple-icon">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            ${p.clientName}
+          </h3>
+          <p>Total Value: ${value}</p>
+          <p>Risk Level: <span class="${riskClass}">${p.riskLevel || "CALCULATING..."}</span></p>
+        </div>
+      </div>`;
+  });
+  document.getElementById("portfolio-data").innerHTML = html || "<p>No portfolios found.</p>";
 }
 
-/* INITIAL LOAD */
-
-loadPortfolioData();
-
-loadMarketData();
-
-/* AUTO REFRESH */
-
-setInterval(()=>{
-
-loadPortfolioData();
-
-loadMarketData();
-
-},5000);
-
-/* DEFAULT AI DASHBOARD VALUES */
-
-const highRiskCount=34;
-
-const expectedAllocation=30;
-
-const currentAllocation=38;
-
-const driftValue=currentAllocation-expectedAllocation;
-
-const stockExposure=28;
-
-const dailyDropPercent=4.2;
-
-/* AI SUMMARY */
-
-if(highRiskCount>30){
-
-document.getElementById("ai-summary").innerHTML=
-"AI detected elevated portfolio volatility. Multiple portfolios show high-risk exposure. Immediate diversification is recommended.";
-
-}
-else if(highRiskCount>15){
-
-document.getElementById("ai-summary").innerHTML=
-"AI detected moderate market exposure. Portfolio diversification can improve stability.";
-
-}
-else{
-
-document.getElementById("ai-summary").innerHTML=
-"AI analysis indicates healthy portfolio diversification and stable market exposure.";
-
+// ---------------------------------------------------------------
+// FETCH: Market Data (port 8081)
+// ---------------------------------------------------------------
+async function loadMarketData() {
+  try {
+    const response = await fetch(`${MARKET_DATA_SERVICE_URL}/market-data`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    allMarketData = await response.json();
+    renderMarketCards(allMarketData);
+  } catch (err) {
+    document.getElementById("market-data").innerHTML =
+      `<p style="color:red">⚠ Market Data Service unavailable. Start service on port 8081.<br><small>${err.message}</small></p>`;
+  }
 }
 
-/* HEALTH STATUS */
+function renderMarketCards(marketData) {
+  let html = "";
+  marketData.forEach(m => {
+    const symbol       = m.stockSymbol || m.symbol || m.stockName;
+    const name         = m.stockName || symbol;
+    const price        = (m.currentPrice || m.price || 0).toFixed(2);
+    const change       = (m.changePercent || m.change || 0).toFixed(2);
+    const dailyChange  = (m.dailyChangePercent || 0).toFixed(2);
+    const isPositive   = parseFloat(change) >= 0;
+    const logo         = companyLogos[symbol] || companyLogos[name] || "";
 
-if(highRiskCount>30){
-
-document.getElementById("health-status").innerHTML=
-"Portfolio Health: CRITICAL";
-
-document.getElementById("health-status").style.color="red";
-
-}
-else if(highRiskCount>15){
-
-document.getElementById("health-status").innerHTML=
-"Portfolio Health: MODERATE";
-
-document.getElementById("health-status").style.color="orange";
-
-}
-else{
-
-document.getElementById("health-status").innerHTML=
-"Portfolio Health: GOOD";
-
-document.getElementById("health-status").style.color="lime";
-
-}
-
-/* ALLOCATION DRIFT */
-
-if(driftValue>5){
-
-document.getElementById("allocation-drift").innerHTML=
-"Allocation Drift Alert: Tech allocation exceeded by "+
-driftValue+
-"%. Rebalancing recommended.";
-
-document.getElementById("allocation-drift").style.color="red";
-
-}
-else{
-
-document.getElementById("allocation-drift").innerHTML=
-"Allocation Drift Status: Portfolio allocation is stable.";
-
-document.getElementById("allocation-drift").style.color="lime";
-
+    html += `
+      <div class="service-item market-card">
+        <div class="market-left">
+          <div class="service-item-icon-box market-logo-box">
+            <img src="${logo}" class="company-logo"
+                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+          </div>
+          <div>
+            <h3>${name}</h3>
+            <p style="color:#aaa;font-size:13px;">${symbol}</p>
+            <p>₹${price}</p>
+          </div>
+        </div>
+        <div class="market-right">
+          <p class="${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${change}%</p>
+          <p style="font-size:12px;color:#aaa;">Day: ${parseFloat(dailyChange) >= 0 ? '+' : ''}${dailyChange}%</p>
+        </div>
+      </div>`;
+  });
+  document.getElementById("market-data").innerHTML = html || "<p>No market data found.</p>";
 }
 
-/* STOCK EXPOSURE */
+// ---------------------------------------------------------------
+// FETCH: Risk Analysis (port 8082) — MAIN DATA SOURCE
+// ---------------------------------------------------------------
+async function loadRiskAnalysis() {
+  try {
+    const response = await fetch(`${RISK_SERVICE_URL}/risk-analysis`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    allRiskData = await response.json();
+    updateDashboardSummary(allRiskData);
 
-if(stockExposure>20){
-
-document.getElementById("stock-exposure").innerHTML=
-"Stock Exposure Alert: Single stock exposure exceeded 20%. Diversification is strongly recommended.";
-
-document.getElementById("stock-exposure").style.color="red";
-
-}
-else{
-
-document.getElementById("stock-exposure").innerHTML=
-"Stock Exposure Status: Diversification levels are healthy.";
-
-document.getElementById("stock-exposure").style.color="lime";
-
-}
-
-/* DAILY DROP */
-
-if(dailyDropPercent>3){
-
-document.getElementById("daily-drop").innerHTML=
-"Daily Portfolio Drop Alert: Portfolio declined by "+
-dailyDropPercent+
-"%. High market volatility detected.";
-
-document.getElementById("daily-drop").style.color="red";
-
-}
-else{
-
-document.getElementById("daily-drop").innerHTML=
-"Daily Portfolio Drop Status: Market movement is stable.";
-
-document.getElementById("daily-drop").style.color="lime";
-
+    // If a client is selected, refresh their panel too
+    if (selectedClient) {
+      const updated = allRiskData.find(r => r.clientId === selectedClient);
+      if (updated) renderRiskPanel(updated);
+    }
+  } catch (err) {
+    document.getElementById("ai-summary").textContent =
+      `⚠ Risk Analysis Service unavailable. Start service on port 8082. (${err.message})`;
+    document.getElementById("health-status").textContent = "Portfolio Health: UNAVAILABLE";
+    document.getElementById("health-status").style.color = "gray";
+  }
 }
 
-/* ALERTS */
+// ---------------------------------------------------------------
+// UPDATE: Dashboard AI Summary Panel from Risk Data
+// ---------------------------------------------------------------
+function updateDashboardSummary(riskData) {
+  if (!riskData || riskData.length === 0) return;
 
-let alerts="";
+  const total        = riskData.length;
+  const highCount    = riskData.filter(r => r.riskLevel === "HIGH").length;
+  const mediumCount  = riskData.filter(r => r.riskLevel === "MEDIUM").length;
+  const lowCount     = riskData.filter(r => r.riskLevel === "LOW").length;
+  const breachedCount = riskData.filter(r => r.hasBreaches).length;
 
-if(highRiskCount>30){
+  const totalValue   = riskData.reduce((sum, r) => sum + (r.totalPortfolioValue || 0), 0);
+  const avgDaily     = riskData.reduce((sum, r) => sum + (r.dailyChangePercent || 0), 0) / total;
 
-alerts+="<li>Critical Risk Alert: High-risk portfolios exceeded threshold.</li>";
+  // Count breach types
+  let driftCount    = 0, concCount = 0, dropCount = 0;
+  riskData.forEach(r => {
+    if (r.breaches) {
+      r.breaches.forEach(b => {
+        if (b.breachType === "ALLOCATION_DRIFT")   driftCount++;
+        if (b.breachType === "CONCENTRATION_RISK") concCount++;
+        if (b.breachType === "DAILY_DROP")         dropCount++;
+      });
+    }
+  });
 
+  // ---- Health Status ----
+  const healthStatus = document.getElementById("health-status");
+  if (highCount > 20) {
+    healthStatus.textContent = "Portfolio Health: CRITICAL";
+    healthStatus.style.color = "red";
+  } else if (highCount > 5 || mediumCount > 30) {
+    healthStatus.textContent = "Portfolio Health: MODERATE";
+    healthStatus.style.color = "orange";
+  } else {
+    healthStatus.textContent = "Portfolio Health: GOOD";
+    healthStatus.style.color = "lime";
+  }
+
+  // ---- AI Summary ----
+  document.getElementById("ai-summary").textContent =
+    `AI Engine detected ${breachedCount} of ${total} portfolios with active risk breaches. ` +
+    `${highCount} portfolios are HIGH risk, ${mediumCount} MEDIUM, ${lowCount} LOW. ` +
+    `Total portfolio value: ₹${(totalValue/10000000).toFixed(2)}Cr. ` +
+    `Average daily performance: ${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}%.`;
+
+  // ---- Allocation Drift ----
+  const allocationDrift = document.getElementById("allocation-drift");
+  if (driftCount > 0) {
+    allocationDrift.textContent =
+      `Allocation Drift Alert: ${driftCount} breach(es) detected across portfolios. Rebalancing recommended.`;
+    allocationDrift.style.color = "red";
+  } else {
+    allocationDrift.textContent = "Allocation Drift: All portfolios within target allocation bands.";
+    allocationDrift.style.color = "lime";
+  }
+
+  // ---- Stock Concentration ----
+  const stockExposure = document.getElementById("stock-exposure");
+  if (concCount > 0) {
+    stockExposure.textContent =
+      `Concentration Risk: ${concCount} breach(es) detected. Single-stock exposure exceeded 20% threshold.`;
+    stockExposure.style.color = "red";
+  } else {
+    stockExposure.textContent = "Stock Concentration: All holdings within acceptable exposure limits.";
+    stockExposure.style.color = "lime";
+  }
+
+  // ---- Daily Drop ----
+  const dailyDrop = document.getElementById("daily-drop");
+  if (dropCount > 0) {
+    dailyDrop.textContent =
+      `Daily Drop Alert: ${dropCount} portfolio(s) declined more than 3% today. High volatility detected.`;
+    dailyDrop.style.color = "red";
+  } else {
+    dailyDrop.textContent = `Daily Drop: Average portfolio change today: ${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}%. Within acceptable range.`;
+    dailyDrop.style.color = avgDaily < -1 ? "orange" : "lime";
+  }
+
+  // ---- Alert List ----
+  let alerts = "";
+  if (highCount > 0)  alerts += `<li>🔴 ${highCount} HIGH-risk portfolio(s) require immediate attention.</li>`;
+  if (driftCount > 0) alerts += `<li>🟠 ${driftCount} allocation drift breach(es) detected. Rebalancing advised.</li>`;
+  if (concCount > 0)  alerts += `<li>🔴 ${concCount} concentration risk breach(es). Diversification required.</li>`;
+  if (dropCount > 0)  alerts += `<li>🔴 ${dropCount} portfolio(s) with >3% daily drop today.</li>`;
+  if (!alerts)        alerts  = "<li>✅ No active risk alerts. All portfolios within acceptable parameters.</li>";
+  document.getElementById("alert-list").innerHTML = alerts;
+
+  // ---- Health Score ----
+  let healthScore = 100;
+  healthScore -= highCount * 0.8;
+  healthScore -= mediumCount * 0.3;
+  healthScore -= driftCount * 1.0;
+  healthScore -= concCount * 1.5;
+  healthScore -= dropCount * 2.0;
+  healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+
+  document.getElementById("health-score").textContent = `AI Health Score: ${healthScore}/100`;
+
+  // ---- AI Recommendation ----
+  let recommendation = "";
+  if (highCount > 20) {
+    recommendation = "AI Recommendation: Portfolio system is under significant stress. " +
+      "Immediate rebalancing and risk reduction across HIGH-risk portfolios is strongly advised. " +
+      "Consider defensive repositioning until market volatility subsides.";
+  } else if (highCount > 0 || driftCount > 0) {
+    recommendation = "AI Recommendation: Multiple portfolios show risk breaches. " +
+      "Priority action: address concentration risks first, then allocation drift. " +
+      "Click individual clients for specific rebalancing guidance.";
+  } else {
+    recommendation = "AI Recommendation: Portfolio system health is good. " +
+      "All positions are within target thresholds. Continue current strategy with periodic monitoring.";
+  }
+  document.getElementById("ai-recommendation").innerHTML = recommendation;
+
+  // ---- Risk Meter ----
+  const fill = document.querySelector(".risk-fill");
+  const riskScore = 100 - healthScore;
+  fill.style.width = riskScore + "%";
+  fill.style.background = riskScore > 60 ? "red" : riskScore > 30 ? "orange" : "lime";
+  document.getElementById("risk-percentage").textContent = `Risk Score: ${riskScore}%`;
+
+  // Update top stats
+  const highRiskEl = document.querySelector(".top-card:nth-child(4) p");
+  if (highRiskEl) { highRiskEl.textContent = highCount; highRiskEl.style.color = "red"; }
+
+  const totalValueEl = document.querySelector(".top-card:nth-child(2) p");
+  if (totalValueEl) {
+    totalValueEl.textContent = `₹${(totalValue/10000000).toFixed(2)}Cr`;
+  }
 }
 
-if(driftValue>5){
+// ---------------------------------------------------------------
+// CLIENT SELECTION — click on a portfolio card
+// ---------------------------------------------------------------
+function selectClient(clientId, clientName, riskLevel, portfolioValue, event) {
+  // Highlight selected card
+  document.querySelectorAll(".portfolio-card").forEach(card => {
+    card.style.border = "1px solid rgba(255,255,255,0.1)";
+  });
+  if (event && event.currentTarget) {
+    event.currentTarget.style.border = "2px solid cyan";
+  }
 
-alerts+="<li>Allocation Drift Alert: Portfolio rebalancing required.</li>";
+  selectedClient = clientId;
 
+  // Find existing risk data for this client (if loaded)
+  const existingRisk = allRiskData.find(r => r.clientId === clientId);
+  if (existingRisk) {
+    renderRiskPanel(existingRisk);
+  } else {
+    // Show loading state while fetching
+    document.getElementById("risk-data").innerHTML = `
+      <div class="service-item risk-card">
+        <p style="color:cyan">Loading risk analysis for ${clientName}...</p>
+      </div>`;
+    // Fetch individual risk analysis
+    fetchAndRenderRiskForClient(clientId);
+  }
 }
 
-if(stockExposure>20){
+async function fetchAndRenderRiskForClient(clientId) {
+  try {
+    const response = await fetch(`${RISK_SERVICE_URL}/risk-analysis/${clientId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const riskData = await response.json();
+    renderRiskPanel(riskData);
 
-alerts+="<li>Stock Exposure Alert: Concentration risk detected.</li>";
-
+    // Also get AI insight from AI Insight Service
+    fetchAndRenderAIInsight(clientId);
+  } catch (err) {
+    document.getElementById("risk-data").innerHTML =
+      `<p style="color:red">⚠ Could not load risk data: ${err.message}</p>`;
+  }
 }
 
-if(dailyDropPercent>3){
+async function fetchAndRenderAIInsight(clientId) {
+  try {
+    const response = await fetch(`${AI_INSIGHT_SERVICE_URL}/ai-insight/portfolio/${clientId}`);
+    if (!response.ok) return; // silently fail if AI service is down
+    const insight = await response.json();
 
-alerts+="<li>Market Volatility Alert: Significant daily portfolio decline detected.</li>";
+    // Update AI summary panel with AI Insight Service response
+    document.getElementById("ai-summary").textContent = insight.explanation || "";
+    document.getElementById("ai-recommendation").innerHTML =
+      `${insight.suggestedAction || ""}<br><br>
+       <small style="color:#888;font-size:12px;">${insight.disclaimer || ""}</small>`;
 
+    // Show severity badge
+    const severityColor = insight.severity === "CRITICAL" ? "red"
+                        : insight.severity === "WARNING" ? "orange" : "lime";
+    document.getElementById("health-status").textContent =
+      `AI Severity: ${insight.severity} | Provider: ${insight.aiProvider}`;
+    document.getElementById("health-status").style.color = severityColor;
+
+  } catch (err) {
+    // AI Insight Service may not be running — silently skip
+    console.log("[Dashboard] AI Insight Service not available:", err.message);
+  }
 }
 
-document.getElementById("alert-list").innerHTML=alerts;
+// ---------------------------------------------------------------
+// RENDER: Risk Panel for selected client
+// ---------------------------------------------------------------
+function renderRiskPanel(riskData) {
+  const riskColor = riskData.riskLevel === "HIGH"   ? "red"
+                  : riskData.riskLevel === "MEDIUM" ? "orange" : "lime";
+  const icon      = riskData.riskLevel === "HIGH"   ? "fa-triangle-exclamation"
+                  : riskData.riskLevel === "MEDIUM" ? "fa-chart-line" : "fa-shield-halved";
+  const value     = (riskData.totalPortfolioValue || 0)
+    .toLocaleString("en-IN", {maximumFractionDigits: 2});
+  const daily     = (riskData.dailyChangePercent || 0).toFixed(2);
 
-/* TIMESTAMP */
+  let breachesHtml = "";
+  if (riskData.breaches && riskData.breaches.length > 0) {
+    riskData.breaches.forEach(b => {
+      const bColor = b.breachType === "DAILY_DROP" || b.breachType === "CONCENTRATION_RISK"
+        ? "red" : "orange";
+      breachesHtml += `
+        <div style="margin-top:8px;padding:8px;border-left:3px solid ${bColor};background:rgba(255,100,0,0.05);border-radius:4px;">
+          <small style="color:${bColor};font-weight:bold;">[${b.breachType}]</small>
+          <p style="margin:4px 0;font-size:14px;">${b.description}</p>
+        </div>`;
+    });
+  } else {
+    breachesHtml = `<p style="color:lime;margin-top:8px;">✅ No risk threshold breaches detected.</p>`;
+  }
 
-function updateTimestamp(){
+  document.getElementById("risk-data").innerHTML = `
+    <div class="service-item risk-card">
+      <div class="risk-top">
+        <div class="risk-left">
+          <div class="risk-icon-box">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+          <div class="risk-info">
+            <h3>${riskData.clientName}</h3>
+            <p>Value: ₹${value}</p>
+            <p>Daily: <span style="color:${parseFloat(daily) >= 0 ? 'lime' : 'red'}">${parseFloat(daily) >= 0 ? '+' : ''}${daily}%</span></p>
+          </div>
+        </div>
+        <div class="risk-level-box">
+          <p>Risk Level</p>
+          <span style="color:${riskColor}">${riskData.riskLevel}</span>
+        </div>
+      </div>
+      <div class="risk-suggestion">
+        <h4 style="color:cyan;margin-bottom:8px;">Risk Breach Details:</h4>
+        ${breachesHtml}
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+        <small style="color:#888;">Last analyzed: ${riskData.alertTimestamp || "N/A"}</small>
+      </div>
+    </div>`;
 
-const now=new Date();
+  // Also update AI panel with local insight (overridden if AI service responds)
+  const suggestion = riskData.aiInsight || riskData.suggestedAction || riskData.suggestion
+    || buildLocalInsight(riskData);
+  document.getElementById("ai-summary").textContent =
+    buildLocalExplanation(riskData);
+  document.getElementById("ai-recommendation").innerHTML = suggestion;
 
-document.getElementById("last-updated").innerHTML=
-"Last Updated: "+
-now.toLocaleTimeString('en-US');
+  const healthStatus = document.getElementById("health-status");
+  healthStatus.textContent = `Portfolio Health: ${riskData.riskLevel}`;
+  healthStatus.style.color = riskColor;
 
+  // Update drift/exposure/drop indicators for this client
+  updateBreachIndicators(riskData);
 }
 
-updateTimestamp();
+function updateBreachIndicators(riskData) {
+  const driftEl = document.getElementById("allocation-drift");
+  const expEl   = document.getElementById("stock-exposure");
+  const dropEl  = document.getElementById("daily-drop");
 
-setInterval(updateTimestamp,1000);
+  const driftBreach = riskData.breaches
+    ? riskData.breaches.find(b => b.breachType === "ALLOCATION_DRIFT") : null;
+  const concBreach  = riskData.breaches
+    ? riskData.breaches.find(b => b.breachType === "CONCENTRATION_RISK") : null;
+  const dropBreach  = riskData.breaches
+    ? riskData.breaches.find(b => b.breachType === "DAILY_DROP") : null;
 
-/* HEALTH SCORE */
+  if (driftBreach) {
+    driftEl.textContent = `Allocation Drift: ${driftBreach.description}`;
+    driftEl.style.color = "red";
+  } else {
+    driftEl.textContent = `Allocation Drift: Within target bands for ${riskData.clientName}.`;
+    driftEl.style.color = "lime";
+  }
 
-let healthScore=100;
+  if (concBreach) {
+    expEl.textContent = `Concentration: ${concBreach.description}`;
+    expEl.style.color = "red";
+  } else {
+    expEl.textContent = `Stock Concentration: All holdings within 20% threshold.`;
+    expEl.style.color = "lime";
+  }
 
-healthScore-=highRiskCount;
-
-healthScore-=driftValue;
-
-healthScore-=stockExposure/2;
-
-healthScore-=dailyDropPercent*2;
-
-if(healthScore<0){
-
-healthScore=0;
-
+  if (dropBreach) {
+    dropEl.textContent = `Daily Drop: ${dropBreach.description}`;
+    dropEl.style.color = "red";
+  } else {
+    const daily = (riskData.dailyChangePercent || 0).toFixed(2);
+    dropEl.textContent = `Daily Drop: Portfolio change today: ${daily >= 0 ? '+' : ''}${daily}%`;
+    dropEl.style.color = parseFloat(daily) < -1 ? "orange" : "lime";
+  }
 }
 
-document.getElementById("health-score").innerHTML=
-"AI Health Score: "+
-Math.round(healthScore)+
-"/100";
-
-/* RECOMMENDATIONS */
-
-let recommendation="";
-
-if(highRiskCount>30){
-
-recommendation=
-"AI Recommendation: Reduce exposure to high-volatility assets and improve diversification.<br><br>";
-
+function buildLocalExplanation(riskData) {
+  if (!riskData.breaches || riskData.breaches.length === 0) {
+    return `${riskData.clientName} portfolio is healthy with no risk threshold breaches.`;
+  }
+  return `${riskData.clientName} has ${riskData.breaches.length} active risk breach(es). ` +
+    `Risk level: ${riskData.riskLevel}. Portfolio value: ₹${(riskData.totalPortfolioValue||0).toLocaleString("en-IN")}.`;
 }
 
-if(driftValue>5){
-
-recommendation+=
-"AI Recommendation: Portfolio allocation drift exceeded safe threshold. Rebalancing is advised.<br><br>";
-
+function buildLocalInsight(riskData) {
+  if (!riskData.breaches || riskData.breaches.length === 0) {
+    return "Continue current investment strategy. Portfolio is within all risk thresholds.";
+  }
+  const suggestions = [];
+  if (riskData.breaches.some(b => b.breachType === "CONCENTRATION_RISK")) {
+    suggestions.push("Reduce concentrated positions to below 20%.");
+  }
+  if (riskData.breaches.some(b => b.breachType === "ALLOCATION_DRIFT")) {
+    suggestions.push("Rebalance to restore target allocation weights.");
+  }
+  if (riskData.breaches.some(b => b.breachType === "DAILY_DROP")) {
+    suggestions.push("Consider adding defensive assets to reduce drawdown exposure.");
+  }
+  return suggestions.join(" ") +
+    "<br><br><small style='color:#888;font-size:12px;'>DISCLAIMER: AI-generated insight. Not financial advice.</small>";
 }
 
-if(stockExposure>20){
+// ---------------------------------------------------------------
+// AUTO-REFRESH TIMERS
+// ---------------------------------------------------------------
 
-recommendation+=
-"AI Recommendation: Reduce concentration in single-stock holdings to minimize portfolio risk.<br><br>";
+// Market data: every 5 seconds (matches backend simulation interval)
+setInterval(loadMarketData, 5000);
 
+// Risk analysis: every 10 seconds (slightly slower — heavier computation)
+setInterval(loadRiskAnalysis, 10000);
+
+// Portfolio list: every 30 seconds (changes less frequently)
+setInterval(loadPortfolioData, 30000);
+
+// Timestamp: every second
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById("last-updated").textContent =
+    "Last Updated: " + now.toLocaleTimeString("en-US");
 }
+setInterval(updateTimestamp, 1000);
 
-if(dailyDropPercent>3){
-
-recommendation+=
-"AI Recommendation: Market volatility is elevated. Consider defensive investment strategies.";
-
-}
-
-document.getElementById("ai-recommendation").innerHTML=
-recommendation;
-
-/* ENGINE STATUS */
-
-const engineMessages=[
-
-"AI Engine Status: Monitoring Risk...",
-
-"AI Engine Status: Detecting Market Volatility...",
-
-"AI Engine Status: Running Portfolio Analysis...",
-
-"AI Engine Status: Evaluating Allocation Drift...",
-
-"AI Engine Status: ACTIVE"
-
+// ---------------------------------------------------------------
+// AI ENGINE STATUS ANIMATION
+// ---------------------------------------------------------------
+const engineMessages = [
+  "AI Engine Status: Monitoring Risk Thresholds...",
+  "AI Engine Status: Detecting Allocation Drift...",
+  "AI Engine Status: Checking Stock Concentration...",
+  "AI Engine Status: Analyzing Daily Portfolio Drop...",
+  "AI Engine Status: Generating AI Insights...",
+  "AI Engine Status: Publishing Risk Alerts...",
+  "AI Engine Status: ACTIVE — All Services Online"
 ];
+let engineIndex = 0;
+setInterval(() => {
+  document.getElementById("ai-engine-status").textContent = engineMessages[engineIndex];
+  engineIndex = (engineIndex + 1) % engineMessages.length;
+}, 2500);
 
-let engineIndex=0;
+// ---------------------------------------------------------------
+// ALERT PANEL TOGGLE
+// ---------------------------------------------------------------
+window.addEventListener("DOMContentLoaded", () => {
+  const alertToggle = document.getElementById("alert-toggle");
+  const alertList   = document.getElementById("alert-list");
 
-setInterval(()=>{
+  alertToggle.addEventListener("click", () => {
+    alertList.classList.toggle("hide-alerts");
+    alertToggle.innerHTML = alertList.classList.contains("hide-alerts")
+      ? "Risk Alerts ▶" : "Risk Alerts ▼";
+  });
 
-document.getElementById("ai-engine-status").innerHTML=
-engineMessages[engineIndex];
-
-engineIndex++;
-
-if(engineIndex>=engineMessages.length){
-
-engineIndex=0;
-
-}
-
-},3000);
-
-/* RISK METER */
-
-document.querySelector(".risk-fill").style.width=
-healthScore+"%";
-
-if(healthScore>70){
-
-document.querySelector(".risk-fill").style.background=
-"lime";
-
-}
-else if(healthScore>40){
-
-document.querySelector(".risk-fill").style.background=
-"orange";
-
-}
-else{
-
-document.querySelector(".risk-fill").style.background=
-"red";
-
-}
-
-document.getElementById("risk-percentage").innerHTML=
-"Risk Score: "+
-healthScore+
-"%";
-
-/* ALERT TOGGLE */
-
-window.addEventListener("DOMContentLoaded",()=>{
-
-const alertToggle=document.getElementById("alert-toggle");
-
-const alertList=document.getElementById("alert-list");
-
-alertToggle.addEventListener("click",()=>{
-
-alertList.classList.toggle("hide-alerts");
-
-if(alertList.classList.contains("hide-alerts")){
-
-alertToggle.innerHTML="Risk Alerts ▶";
-
-}
-else{
-
-alertToggle.innerHTML="Risk Alerts ▼";
-
-}
-
+  // INITIAL LOAD — load all data on page start
+  loadPortfolioData();
+  loadMarketData();
+  loadRiskAnalysis();
+  updateTimestamp();
 });
-
-});
-
-/* AI CLIENT INSIGHT */
-
-function showPortfolioInsight(clientName,riskLevel,portfolioValue,event){
-
-document.querySelectorAll(".portfolio-card").forEach(card=>{
-
-card.style.border="1px solid rgba(255,255,255,0.1)";
-
-});
-
-event.currentTarget.style.border="2px solid cyan";
-
-let riskScore=0;
-
-let driftMessage="";
-
-let exposureMessage="";
-
-let dropMessage="";
-
-let alertItems="";
-
-let aiMessage="";
-
-let recommendationMessage="";
-
-let healthStatus="";
-
-/* HIGH RISK */
-
-if(riskLevel==="HIGH"){
-
-riskScore=82;
-
-healthStatus="Portfolio Health: CRITICAL";
-
-document.getElementById("health-status").style.color="red";
-
-aiMessage=
-"AI Insight for "+
-clientName+
-": High portfolio risk detected. Elevated market exposure and concentration risk identified.";
-
-driftMessage=
-"Allocation Drift Alert: Portfolio allocation exceeded target model by 9%. Rebalancing strongly recommended.";
-
-document.getElementById("allocation-drift").style.color="red";
-
-exposureMessage=
-"Stock Exposure Alert: Technology sector exposure exceeded 25%. Diversification required.";
-
-document.getElementById("stock-exposure").style.color="red";
-
-dropMessage=
-"Daily Portfolio Drop Alert: Portfolio declined by 4.8%. High volatility detected.";
-
-document.getElementById("daily-drop").style.color="red";
-
-alertItems=
-"<li>Critical Risk Alert: High-risk exposure detected.</li>"+
-"<li>Allocation Drift Alert: Portfolio rebalancing required.</li>"+
-"<li>Stock Exposure Alert: Concentration risk identified.</li>";
-
-recommendationMessage=
-"AI Recommendation: Reduce high-volatility exposure and rebalance portfolio across defensive sectors.";
-
-}
-
-/* MEDIUM RISK */
-
-else if(riskLevel==="MEDIUM"){
-
-riskScore=58;
-
-healthStatus="Portfolio Health: MODERATE";
-
-document.getElementById("health-status").style.color="orange";
-
-aiMessage=
-"AI Insight for "+
-clientName+
-": Portfolio is moderately balanced. Partial allocation adjustments recommended.";
-
-driftMessage=
-"Allocation Drift Warning: Allocation drift reached 6%. Minor rebalancing advised.";
-
-document.getElementById("allocation-drift").style.color="orange";
-
-exposureMessage=
-"Stock Exposure Warning: Sector exposure slightly exceeds preferred range.";
-
-document.getElementById("stock-exposure").style.color="orange";
-
-dropMessage=
-"Daily Portfolio Drop Status: Portfolio declined by 2.1%. Monitoring recommended.";
-
-document.getElementById("daily-drop").style.color="orange";
-
-alertItems=
-"<li>Moderate Risk Alert: Portfolio requires monitoring.</li>"+
-"<li>Allocation Warning: Minor drift detected.</li>";
-
-recommendationMessage=
-"AI Recommendation: Improve diversification across medium-volatility assets.";
-
-}
-
-/* LOW RISK */
-
-else{
-
-riskScore=28;
-
-healthStatus="Portfolio Health: GOOD";
-
-document.getElementById("health-status").style.color="lime";
-
-aiMessage=
-"AI Insight for "+
-clientName+
-": Portfolio risk remains stable with healthy diversification.";
-
-driftMessage=
-"Allocation Drift Status: Portfolio allocation remains stable.";
-
-document.getElementById("allocation-drift").style.color="lime";
-
-exposureMessage=
-"Stock Exposure Status: Diversification levels are healthy.";
-
-document.getElementById("stock-exposure").style.color="lime";
-
-dropMessage=
-"Daily Portfolio Drop Status: Market movement remains stable.";
-
-document.getElementById("daily-drop").style.color="lime";
-
-alertItems=
-"<li>Low Risk Status: Portfolio is stable.</li>";
-
-recommendationMessage=
-"AI Recommendation: Continue current investment strategy with periodic monitoring.";
-
-}
-
-/* LARGE PORTFOLIO */
-
-if(portfolioValue>400000){
-
-aiMessage+=
-" Large portfolio concentration detected. AI recommends periodic allocation review.";
-
-}
-
-/* UPDATE AI PANEL */
-
-document.getElementById("ai-summary").innerHTML=aiMessage;
-
-document.getElementById("allocation-drift").innerHTML=driftMessage;
-
-document.getElementById("stock-exposure").innerHTML=exposureMessage;
-
-document.getElementById("daily-drop").innerHTML=dropMessage;
-
-document.getElementById("alert-list").innerHTML=alertItems;
-
-document.getElementById("health-status").innerHTML=healthStatus;
-
-document.getElementById("ai-recommendation").innerHTML=
-recommendationMessage;
-
-document.getElementById("health-score").innerHTML=
-"AI Health Score: "+
-(100-riskScore)+
-"/100";
-
-document.getElementById("risk-percentage").innerHTML=
-"Risk Score: "+
-riskScore+
-"%";
-
-document.querySelector(".risk-fill").style.width=
-riskScore+
-"%";
-
-/* RISK METER COLORS */
-
-if(riskScore>70){
-
-document.querySelector(".risk-fill").style.background="red";
-
-}
-else if(riskScore>40){
-
-document.querySelector(".risk-fill").style.background="orange";
-
-}
-else{
-
-document.querySelector(".risk-fill").style.background="lime";
-
-}
-
-}
-
-/* SELECT CLIENT */
-
-function selectClient(clientName,riskLevel,portfolioValue,event){
-
-document.querySelectorAll(".portfolio-card").forEach(card=>{
-
-card.style.border="1px solid rgba(255,255,255,0.1)";
-
-});
-
-event.currentTarget.style.border="2px solid cyan";
-
-let suggestion="";
-
-let icon="";
-
-let riskColor="";
-
-/* HIGH */
-
-if(riskLevel==="HIGH"){
-
-suggestion=
-"AI detected high portfolio volatility and concentration risk. Diversification strongly recommended.";
-
-icon="fa-solid fa-triangle-exclamation";
-
-riskColor="red";
-
-}
-
-/* MEDIUM */
-
-else if(riskLevel==="MEDIUM"){
-
-suggestion=
-"Portfolio is moderately balanced. Partial reallocation into stable assets recommended.";
-
-icon="fa-solid fa-chart-line";
-
-riskColor="orange";
-
-}
-
-/* LOW */
-
-else{
-
-suggestion=
-"Portfolio risk is low. Current investment allocation appears healthy and stable.";
-
-icon="fa-solid fa-shield-halved";
-
-riskColor="lime";
-
-}
-
-/* RISK ANALYSIS CARD */
-
-document.getElementById("risk-data").innerHTML=`
-
-<div class="service-item risk-card">
-
-<div class="risk-top">
-
-<div class="risk-left">
-
-<div class="risk-icon-box">
-
-<i class="${icon}"></i>
-
-</div>
-
-<div class="risk-info">
-
-<h3>${clientName}</h3>
-
-<p>Total Value: ₹${portfolioValue}</p>
-
-</div>
-
-</div>
-
-<div class="risk-level-box">
-
-<p>Risk Level</p>
-
-<span style="color:${riskColor}">
-${riskLevel}
-</span>
-
-</div>
-
-</div>
-
-<div class="risk-suggestion">
-
-<p>${suggestion}</p>
-
-</div>
-
-</div>
-
-`;
-
-/* UPDATE AI SUMMARY */
-
-showPortfolioInsight(
-clientName,
-riskLevel,
-portfolioValue,
-event
-);
-
-}

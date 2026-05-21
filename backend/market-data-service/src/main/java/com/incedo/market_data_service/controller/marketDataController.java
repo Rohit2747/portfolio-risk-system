@@ -1,74 +1,64 @@
-
 package com.incedo.market_data_service.controller;
 
 import com.incedo.market_data_service.model.marketData;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.incedo.market_data_service.service.PriceSimulatorService;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
+/**
+ * MarketDataController
+ *
+ * Exposes REST APIs for real-time equity prices.
+ * Prices are updated every 5 seconds by PriceSimulatorService.
+ */
 @RestController
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 public class marketDataController {
 
-    Random random = new Random();
+    private final PriceSimulatorService priceSimulatorService;
 
+    public marketDataController(PriceSimulatorService priceSimulatorService) {
+        this.priceSimulatorService = priceSimulatorService;
+    }
+
+    /**
+     * Health check
+     */
+    @GetMapping("/hello")
+    public String hello() {
+        return "Market Data Service is running on port 8081";
+    }
+
+    /**
+     * Returns current prices for all 20 equities.
+     * Frontend polls this every 5 seconds for live updates.
+     */
     @GetMapping("/market-data")
-    public List<marketData> getMarketData(){
+    public List<marketData> getAllMarketData() {
+        return priceSimulatorService.getAllPrices();
+    }
 
-        List<marketData> marketDataList = new ArrayList<>();
+    /**
+     * Returns current price for a specific stock symbol.
+     * Called by Risk Service for portfolio valuation.
+     */
+    @GetMapping("/market-data/{symbol}")
+    public marketData getBySymbol(@PathVariable String symbol) {
+        marketData data = priceSimulatorService.getCurrentPrice(symbol.toUpperCase());
+        if (data == null) {
+            throw new RuntimeException("Symbol not found: " + symbol);
+        }
+        return data;
+    }
 
-        marketDataList.add(
-                new marketData(
-                        "Apple",
-                        Math.round((210 + random.nextDouble()*15)*100.0)/100.0,
-                        Math.round((-3 + random.nextDouble()*6)*100.0)/100.0
-                )
-        );
-
-        marketDataList.add(
-                new marketData(
-                        "Microsoft",
-                        Math.round((330 + random.nextDouble()*20)*100.0)/100.0,
-                        Math.round((-2 + random.nextDouble()*5)*100.0)/100.0
-                )
-        );
-
-        marketDataList.add(
-                new marketData(
-                        "NVIDIA",
-                        Math.round((950 + random.nextDouble()*40)*100.0)/100.0,
-                        Math.round((-4 + random.nextDouble()*8)*100.0)/100.0
-                )
-        );
-
-        marketDataList.add(
-                new marketData(
-                        "Amazon",
-                        Math.round((180 + random.nextDouble()*12)*100.0)/100.0,
-                        Math.round((-2 + random.nextDouble()*5)*100.0)/100.0
-                )
-        );
-
-        marketDataList.add(
-                new marketData(
-                        "HDFC",
-                        Math.round((1650 + random.nextDouble()*50)*100.0)/100.0,
-                        Math.round((-1 + random.nextDouble()*3)*100.0)/100.0
-                )
-        );
-
-        marketDataList.add(
-                new marketData(
-                        "Reliance",
-                        Math.round((2900 + random.nextDouble()*60)*100.0)/100.0,
-                        Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-                )
-        );
-
-        return marketDataList;
+    /**
+     * Returns a flat symbol->price map for bulk lookups.
+     * Used by Risk Service when computing portfolio values for all 100 clients.
+     */
+    @GetMapping("/market-data/prices")
+    public Map<String, Double> getPriceMap() {
+        return priceSimulatorService.getPriceMap();
     }
 }

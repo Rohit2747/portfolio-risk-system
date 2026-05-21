@@ -14,10 +14,13 @@
     </parent>
 
     <groupId>com.incedo</groupId>
-    <artifactId>risk-analysis-service</artifactId>
+    <artifactId>ai-insight-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>risk-analysis-service</name>
-    <description>Risk Analysis Service - detects risk threshold breaches and publishes alerts</description>
+    <name>ai-insight-service</name>
+    <description>AI Insight Service - generates AI-powered portfolio risk explanations.
+        Consumes RiskThresholdBreached events and returns structured AI commentary.
+        AWS upgrade: consumes from SQS, calls Amazon Bedrock for LLM explanations.
+    </description>
 
     <properties>
         <java.version>21</java.version>
@@ -52,6 +55,24 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!--
+            AWS UPGRADE: Add these when integrating real AWS services:
+
+            Amazon Bedrock (AI):
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bedrockruntime</artifactId>
+                <version>2.25.11</version>
+            </dependency>
+
+            Amazon SQS (event consumption):
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sqs</artifactId>
+                <version>2.25.11</version>
+            </dependency>
+        -->
 
     </dependencies>
 

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIInsightGeneratedEvent",
+  "description": "Published by AI Insight Service after generating portfolio risk commentary. Consumed by dashboard and notification service.",
+  "type": "object",
+  "required": ["eventType", "clientId", "explanation", "suggestedAction", "severity", "disclaimer", "timestamp"],
+  "properties": {
+    "eventType":      { "type": "string", "const": "AIInsightGeneratedEvent" },
+    "clientId":       { "type": "integer", "example": 78 },
+    "clientName":     { "type": "string", "example": "Client-078" },
+    "riskLevel":      { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+    "explanation":    { "type": "string", "example": "Portfolio is overweight in NVDA by 8.5% due to recent price appreciation." },
+    "suggestedAction": { "type": "string", "example": "Reduce NVDA position by 8.5% and redistribute to underweight holdings." },
+    "severity":       { "type": "string", "enum": ["CRITICAL", "WARNING", "NORMAL"] },
+    "disclaimer":     { "type": "string" },
+    "aiProvider":     { "type": "string", "enum": ["MOCK", "OPENAI", "BEDROCK"] },
+    "timestamp":      { "type": "string", "example": "2026-05-21T14:30:15" }
+  }
+}
