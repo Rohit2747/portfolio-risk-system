@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PriceUpdatedEvent",
+  "description": "Published by Market Data Service. Consumed by Risk Analysis Service.",
+  "type": "object",
+  "required": ["eventType", "stockSymbol", "currentPrice", "timestamp"],
+  "properties": {
+    "eventType":          { "type": "string", "const": "PriceUpdatedEvent" },
+    "stockSymbol":        { "type": "string", "example": "NVDA" },
+    "stockName":          { "type": "string", "example": "NVIDIA Corp." },
+    "currentPrice":       { "type": "number", "example": 875.40 },
+    "previousPrice":      { "type": "number", "example": 862.10 },
+    "changePercent":      { "type": "number", "example": 1.54 },
+    "dailyChangePercent": { "type": "number", "example": 2.31 },
+    "timestamp":          { "type": "string", "example": "2026-05-21T14:30:00" }
+  }
+}

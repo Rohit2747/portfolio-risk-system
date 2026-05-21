@@ -1,21 +1,40 @@
-
 package com.incedo.market_data_service.controller;
 
 import com.incedo.market_data_service.model.marketData;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.incedo.market_data_service.service.PriceSimulatorService;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
+/**
+ * MarketDataController
+ *
+ * Exposes REST APIs for real-time equity prices.
+ * Prices are updated every 5 seconds by PriceSimulatorService.
+ */
 @RestController
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 public class marketDataController {
 
-    Random random = new Random();
+    private final PriceSimulatorService priceSimulatorService;
 
+    public marketDataController(PriceSimulatorService priceSimulatorService) {
+        this.priceSimulatorService = priceSimulatorService;
+    }
+
+    /**
+     * Health check
+     */
+    @GetMapping("/hello")
+    public String hello() {
+        return "Market Data Service is running on port 8081";
+    }
+
+    /**
+     * Returns current prices for all 20 equities.
+     * Frontend polls this every 5 seconds for live updates.
+     */
     @GetMapping("/market-data")
 public List<marketData> getMarketData(){
 
