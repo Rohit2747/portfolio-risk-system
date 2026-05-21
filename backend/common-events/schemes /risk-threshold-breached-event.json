@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RiskThresholdBreachedEvent",
+  "description": "Published by Risk Analysis Service when any portfolio breaches a risk threshold. Consumed by AI Insight Service.",
+  "type": "object",
+  "required": ["eventType", "clientId", "clientName", "riskLevel", "breaches", "timestamp"],
+  "properties": {
+    "eventType":    { "type": "string", "const": "RiskThresholdBreachedEvent" },
+    "clientId":     { "type": "integer", "example": 78 },
+    "clientName":   { "type": "string", "example": "Client-078" },
+    "riskLevel":    { "type": "string", "enum": ["HIGH", "MEDIUM"] },
+    "portfolioValue": { "type": "number", "example": 425000.00 },
+    "dailyChangePercent": { "type": "number", "example": -3.8 },
+    "breaches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "breachType":    { "type": "string", "enum": ["ALLOCATION_DRIFT", "CONCENTRATION_RISK", "DAILY_DROP"] },
+          "affectedSymbol": { "type": ["string", "null"], "example": "NVDA" },
+          "actualValue":   { "type": "number", "example": 28.5 },
+          "thresholdValue": { "type": "number", "example": 20.0 },
+          "description":   { "type": "string" }
+        }
+      }
+    },
+    "timestamp": { "type": "string", "example": "2026-05-21T14:30:00" }
+  }
+}
