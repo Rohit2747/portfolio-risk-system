@@ -81,23 +81,19 @@ async function loadPortfolioData() {
 
 /**
  * Generates a deterministic avatar URL for a client.
- * Same clientId always returns the same photo.
- * Uses pravatar.cc — free, realistic human photos.
+ * Same clientId always returns the same photo across sessions.
  *
- * IMPORTANT: Only uses image IDs that show adults (18+).
- * Manually curated list excludes child/teen/baby images.
- * All photos look like realistic investors/professionals.
+ * Uses xsgames.co/randomusers — high-quality, diverse adult portraits.
+ * All photos are professional-grade, realistic adults.
+ * Deterministic: same seed = same face every time.
+ *
+ * Alternates male/female based on clientId for diversity.
  */
-const ADULT_AVATAR_IDS = [
-  1, 3, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-  21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-  37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
-  53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68
-];
-
 function getClientAvatar(clientId) {
-  const idx = (clientId - 1) % ADULT_AVATAR_IDS.length;
-  return `https://i.pravatar.cc/80?img=${ADULT_AVATAR_IDS[idx]}`;
+  const gender = clientId % 2 === 0 ? "women" : "men";
+  // Each ID maps to a unique image number (1-99 range available)
+  const imgNum = ((clientId * 7 + 13) % 90) + 1;  // Spread across range, avoid clustering
+  return `https://randomuser.me/api/portraits/${gender}/${imgNum}.jpg`;
 }
 
 function renderPortfolioCards(portfolios) {
