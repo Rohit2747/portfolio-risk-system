@@ -17,19 +17,57 @@
     <artifactId>market-data-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>market-data-service</name>
-    <description>Market Data Service - simulates live price streaming for 20 equities</description>
+    <description>Market Data Service - simulates live price streaming, publishes PriceUpdated events to SNS</description>
 
     <properties>
         <java.version>21</java.version>
+        <aws.sdk.version>2.25.11</aws.sdk.version>
     </properties>
+
+    <!-- AWS SDK v2 BOM -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 
-        <!-- Spring Web - REST APIs -->
+        <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- Jackson - JSON serialization of PriceUpdated event -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- AWS SDK v2 dependencies                      -->
+        <!-- ============================================ -->
+
+        <!-- Amazon SNS - publish PriceUpdated events -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sns</artifactId>
+        </dependency>
+
+        <!-- AWS Core -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+        </dependency>
+
+        <!-- ============================================ -->
 
         <!-- Lombok -->
         <dependency>
