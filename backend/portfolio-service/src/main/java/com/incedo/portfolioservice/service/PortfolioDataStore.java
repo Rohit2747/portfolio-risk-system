@@ -114,18 +114,23 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     private List<Holding> buildConservativeHoldings(int clientId) {
         int v = (clientId % 5) + 1;  // variation factor 1-5
-        // Target portfolio ~₹10L. Quantities set so value% ≈ target%
-        // HDFCBANK=₹1679, so 18% of 10L = ₹1.8L → ~107 shares
-        // TCS=₹3912, so 12% of 10L = ₹1.2L → ~30 shares
+        // Target portfolio ~₹10L. Quantities calibrated: qty × price ≈ target% × total
+        // Formula: qty = (targetPct/100) × totalPortfolioValue / stockPrice
+        // For ₹10L portfolio:
+        //   HDFCBANK: 18% × 10L / 1679 = 107 shares
+        //   TCS:      12% × 10L / 3912 = 31 shares
+        //   INFY:     10% × 10L / 183 = 546 shares
+        //   SBIN:     14% × 10L / 816 = 172 shares
+        //   ASIANPAINT: 8% × 10L / 2896 = 28 shares
         return Arrays.asList(
-            new Holding("HDFCBANK",  "HDFC Bank",            100 + v*2,  18.0),
-            new Holding("HINDUNILVR","Hindustan Unilever",    60 + v*2,  16.0),
-            new Holding("KOTAKBANK", "Kotak Mahindra Bank",   72 + v*2,  14.0),
-            new Holding("SBIN",      "State Bank of India",  160 + v*3,  14.0),
-            new Holding("TCS",       "TCS Ltd.",              28 + v,    12.0),
-            new Holding("INFY",      "Infosys Ltd.",         500 + v*10, 10.0),
-            new Holding("SUNPHARMA", "Sun Pharmaceutical",   48 + v*2,   8.0),
-            new Holding("ASIANPAINT","Asian Paints",          26 + v,    8.0)
+            new Holding("HDFCBANK",  "HDFC Bank",           107 + v*2,  18.0),
+            new Holding("HINDUNILVR","Hindustan Unilever",   63 + v*2,  16.0),
+            new Holding("KOTAKBANK", "Kotak Mahindra Bank",  76 + v*2,  14.0),
+            new Holding("SBIN",      "State Bank of India", 172 + v*3,  14.0),
+            new Holding("TCS",       "TCS Ltd.",             31 + v,    12.0),
+            new Holding("INFY",      "Infosys Ltd.",        546 + v*10, 10.0),
+            new Holding("SUNPHARMA", "Sun Pharmaceutical",   51 + v*2,   8.0),
+            new Holding("ASIANPAINT","Asian Paints",          28 + v,    8.0)
         );
     }
 

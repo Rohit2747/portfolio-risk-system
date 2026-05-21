@@ -37,26 +37,26 @@ public class PriceSimulatorService {
     // With ticks every 5s, each tick should be ~0.1-0.3% max
     // ---------------------------------------------------------------
     private static final Object[][] EQUITY_CONFIG = {
-        { "AAPL",       "Apple Inc.",            187.50,  0.003 },
-        { "MSFT",       "Microsoft Corp.",       415.20,  0.0025 },
-        { "NVDA",       "NVIDIA Corp.",          875.40,  0.006 },   // high vol
-        { "AMZN",       "Amazon.com Inc.",       182.30,  0.004 },
-        { "GOOGL",      "Alphabet Inc.",         175.60,  0.003 },
-        { "META",       "Meta Platforms",        505.80,  0.005 },   // high vol
-        { "TSLA",       "Tesla Inc.",            172.40,  0.008 },   // highest vol
-        { "RELIANCE",   "Reliance Industries",  2985.50,  0.0025 },
-        { "HDFCBANK",   "HDFC Bank",            1678.90,  0.002 },
-        { "INFY",       "Infosys Ltd.",           183.25,  0.003 },
-        { "TCS",        "TCS Ltd.",             3912.00,  0.002 },
-        { "WIPRO",      "Wipro Ltd.",             538.60,  0.003 },
-        { "ICICIBANK",  "ICICI Bank",            1087.30,  0.0025 },
-        { "SBIN",       "State Bank of India",    815.70,  0.004 },
-        { "BAJFINANCE", "Bajaj Finance",         7285.40,  0.005 },
-        { "ASIANPAINT", "Asian Paints",          2895.60,  0.0025 },
-        { "HINDUNILVR", "Hindustan Unilever",    2534.80,  0.0015 },
-        { "KOTAKBANK",  "Kotak Mahindra Bank",   1834.20,  0.0025 },
-        { "LT",         "Larsen & Toubro",       3478.90,  0.003 },
-        { "SUNPHARMA",  "Sun Pharmaceutical",    1567.30,  0.004 }
+        { "AAPL",       "Apple Inc.",            187.50,  0.0006 },
+        { "MSFT",       "Microsoft Corp.",       415.20,  0.0005 },
+        { "NVDA",       "NVIDIA Corp.",          875.40,  0.0012 },   // high vol
+        { "AMZN",       "Amazon.com Inc.",       182.30,  0.0008 },
+        { "GOOGL",      "Alphabet Inc.",         175.60,  0.0006 },
+        { "META",       "Meta Platforms",        505.80,  0.001 },    // high vol
+        { "TSLA",       "Tesla Inc.",            172.40,  0.0015 },   // highest vol
+        { "RELIANCE",   "Reliance Industries",  2985.50,  0.0005 },
+        { "HDFCBANK",   "HDFC Bank",            1678.90,  0.0004 },
+        { "INFY",       "Infosys Ltd.",           183.25,  0.0006 },
+        { "TCS",        "TCS Ltd.",             3912.00,  0.0004 },
+        { "WIPRO",      "Wipro Ltd.",             538.60,  0.0006 },
+        { "ICICIBANK",  "ICICI Bank",            1087.30,  0.0005 },
+        { "SBIN",       "State Bank of India",    815.70,  0.0008 },
+        { "BAJFINANCE", "Bajaj Finance",         7285.40,  0.001 },
+        { "ASIANPAINT", "Asian Paints",          2895.60,  0.0005 },
+        { "HINDUNILVR", "Hindustan Unilever",    2534.80,  0.0003 },
+        { "KOTAKBANK",  "Kotak Mahindra Bank",   1834.20,  0.0005 },
+        { "LT",         "Larsen & Toubro",       3478.90,  0.0006 },
+        { "SUNPHARMA",  "Sun Pharmaceutical",    1567.30,  0.0008 }
     };
 
     // In-memory price store: symbol -> current marketData
