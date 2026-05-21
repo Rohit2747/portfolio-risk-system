@@ -79,39 +79,7 @@ async function loadPortfolioData() {
   }
 }
 
-/**
- * Generates a deterministic, professional avatar for each client.
- * Uses UI Avatars (ui-avatars.com) — generates clean letter-based avatars
- * with unique background colors per client.
- *
- * Why this approach:
- *   - 100% adult-appropriate (no photos of real people)
- *   - Zero duplicates (unique color per client)
- *   - Looks like real banking/fintech apps (HDFC, Zerodha, ICICI style)
- *   - Deterministic: same client always gets same avatar
- *   - Professional, clean, enterprise-grade
- *   - No external dependency issues (never returns children/teens)
- */
-const AVATAR_COLORS = [
-  "0D8ABC", "2E86AB", "A23B72", "F18F01", "C73E1D",
-  "3C6E71", "284B63", "6B2D5B", "1B4332", "3D405B",
-  "5F0F40", "0F4C5C", "9A031E", "FB8B24", "E36414",
-  "5B8E7D", "8E7DBE", "2B9348", "007F5F", "80B918",
-  "DB3A34", "FFC857", "4361EE", "7209B7", "F72585",
-  "4A4E69", "22577A", "38A3A5", "57CC99", "C7F9CC",
-  "264653", "2A9D8F", "E9C46A", "F4A261", "E76F51",
-  "606C38", "283618", "DDA15E", "BC6C25", "540B0E",
-  "9B2226", "AE2012", "BB3E03", "CA6702", "EE9B00",
-  "94D2BD", "B7E4C7", "52B788", "40916C", "2D6A4F"
-];
-
-function getClientAvatar(clientId) {
-  const name = `Client ${String(clientId).padStart(3, '0')}`;
-  const initials = `C${clientId}`;
-  const colorIdx = (clientId - 1) % AVATAR_COLORS.length;
-  const bgColor = AVATAR_COLORS[colorIdx];
-  return `https://ui-avatars.com/api/?name=${initials}&background=${bgColor}&color=fff&size=80&font-size=0.4&bold=true&format=svg`;
-}
+// No external avatar needed — using built-in icon style (original design)
 
 function renderPortfolioCards(portfolios) {
   let html = "";
@@ -121,19 +89,19 @@ function renderPortfolioCards(portfolios) {
     const value      = p.portfolioValue > 0
       ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
       : "Calculating...";
-    const avatar     = getClientAvatar(p.clientId);
 
     html += `
       <div class="service-item portfolio-card"
            onclick="selectClient(${p.clientId}, '${p.clientName}', '${riskLevel}', ${p.portfolioValue || 0}, event)">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <img src="${avatar}" class="client-avatar"
-               onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
-          <div>
-            <h3 style="margin:0;">${p.clientName}</h3>
-            <p>Total Value: ${value}</p>
-            <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
-          </div>
+        <div>
+          <h3>
+            <div class="service-item-icon-box purple-icon">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            ${p.clientName}
+          </h3>
+          <p>Total Value: ${value}</p>
+          <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
         </div>
       </div>`;
   });
@@ -424,7 +392,6 @@ function renderRiskPanel(riskData) {
   const value     = (riskData.totalPortfolioValue || 0)
     .toLocaleString("en-IN", {maximumFractionDigits: 2});
   const daily     = (riskData.dailyChangePercent || 0).toFixed(2);
-  const avatar    = getClientAvatar(riskData.clientId);
 
   let breachesHtml = "";
   if (riskData.breaches && riskData.breaches.length > 0) {
@@ -445,8 +412,9 @@ function renderRiskPanel(riskData) {
     <div class="service-item risk-card">
       <div class="risk-top">
         <div class="risk-left">
-          <img src="${avatar}" class="client-avatar-large"
-               onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+          <div class="risk-icon-box">
+            <i class="fa-solid ${icon}"></i>
+          </div>
           <div class="risk-info">
             <h3>${riskData.clientName}</h3>
             <p>Value: ₹${value}</p>
