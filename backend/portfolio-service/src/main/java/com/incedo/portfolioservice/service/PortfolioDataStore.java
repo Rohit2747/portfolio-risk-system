@@ -109,79 +109,89 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     // CONSERVATIVE PORTFOLIO: 8 holdings, spread across stable stocks
     // Total target allocation = 100%
-    // Well-diversified: no single stock > 18% (stays below 20% concentration limit)
+    // Quantities are calibrated to match target allocation % by value
+    // (high-price stocks get fewer shares, low-price stocks get more)
     // ---------------------------------------------------------------
     private List<Holding> buildConservativeHoldings(int clientId) {
-        int base = (clientId % 5) * 10 + 50;  // quantity variation: 50–90
+        int v = (clientId % 5) + 1;  // variation factor 1-5
+        // Target portfolio ~₹10L. Quantities set so value% ≈ target%
+        // HDFCBANK=₹1679, so 18% of 10L = ₹1.8L → ~107 shares
+        // TCS=₹3912, so 12% of 10L = ₹1.2L → ~30 shares
         return Arrays.asList(
-            new Holding("HDFCBANK",  "HDFC Bank",            base + 10, 18.0),
-            new Holding("HINDUNILVR","Hindustan Unilever",   base + 8,  16.0),
-            new Holding("KOTAKBANK", "Kotak Mahindra Bank",  base + 5,  14.0),
-            new Holding("SBIN",      "State Bank of India",  base + 5,  14.0),
-            new Holding("TCS",       "TCS Ltd.",             base,      12.0),
-            new Holding("INFY",      "Infosys Ltd.",         base,      10.0),
-            new Holding("SUNPHARMA", "Sun Pharmaceutical",  base - 5,   8.0),
-            new Holding("ASIANPAINT","Asian Paints",        base - 5,   8.0)
+            new Holding("HDFCBANK",  "HDFC Bank",            100 + v*2,  18.0),
+            new Holding("HINDUNILVR","Hindustan Unilever",    60 + v*2,  16.0),
+            new Holding("KOTAKBANK", "Kotak Mahindra Bank",   72 + v*2,  14.0),
+            new Holding("SBIN",      "State Bank of India",  160 + v*3,  14.0),
+            new Holding("TCS",       "TCS Ltd.",              28 + v,    12.0),
+            new Holding("INFY",      "Infosys Ltd.",         500 + v*10, 10.0),
+            new Holding("SUNPHARMA", "Sun Pharmaceutical",   48 + v*2,   8.0),
+            new Holding("ASIANPAINT","Asian Paints",          26 + v,    8.0)
         );
     }
 
     // ---------------------------------------------------------------
     // BALANCED PORTFOLIO: 10 holdings, mix of sectors
     // Total target allocation = 100%
-    // Moderate diversification — may trigger mild allocation drift
+    // Quantities calibrated so actual allocation ≈ target allocation
+    // Should result in LOW or MEDIUM risk (minor drift possible)
     // ---------------------------------------------------------------
     private List<Holding> buildBalancedHoldings(int clientId) {
-        int base = (clientId % 5) * 5 + 30;
+        int v = (clientId % 5) + 1;
+        // Target portfolio ~₹8L
         return Arrays.asList(
-            new Holding("AAPL",      "Apple Inc.",           base + 15, 12.0),
-            new Holding("MSFT",      "Microsoft Corp.",      base + 12, 12.0),
-            new Holding("RELIANCE",  "Reliance Industries",  base + 5,  12.0),
-            new Holding("HDFCBANK",  "HDFC Bank",            base + 8,  10.0),
-            new Holding("TCS",       "TCS Ltd.",             base + 3,  10.0),
-            new Holding("INFY",      "Infosys Ltd.",         base + 10, 10.0),
-            new Holding("ICICIBANK", "ICICI Bank",           base + 5,   8.0),
-            new Holding("LT",        "Larsen & Toubro",      base + 3,   8.0),
-            new Holding("WIPRO",     "Wipro Ltd.",           base + 8,   9.0),
-            new Holding("SUNPHARMA", "Sun Pharmaceutical",  base + 6,   9.0)
+            new Holding("AAPL",      "Apple Inc.",           50 + v*3,  12.0),
+            new Holding("MSFT",      "Microsoft Corp.",      22 + v*2,  12.0),
+            new Holding("RELIANCE",  "Reliance Industries",  30 + v*2,  12.0),
+            new Holding("HDFCBANK",  "HDFC Bank",            45 + v*2,  10.0),
+            new Holding("TCS",       "TCS Ltd.",             19 + v,    10.0),
+            new Holding("INFY",      "Infosys Ltd.",        400 + v*10, 10.0),
+            new Holding("ICICIBANK", "ICICI Bank",           55 + v*2,   8.0),
+            new Holding("LT",        "Larsen & Toubro",      17 + v,     8.0),
+            new Holding("WIPRO",     "Wipro Ltd.",          120 + v*5,   9.0),
+            new Holding("SUNPHARMA", "Sun Pharmaceutical",   43 + v*2,   9.0)
         );
     }
 
     // ---------------------------------------------------------------
     // GROWTH PORTFOLIO: 10 holdings, more tech/growth stocks
     // Total target allocation = 100%
-    // Higher concentration in tech — will trigger some allocation drift
+    // Tech-heavy — some allocation drift expected (MEDIUM risk)
+    // Quantities slightly off-target to create realistic drift
     // ---------------------------------------------------------------
     private List<Holding> buildGrowthHoldings(int clientId) {
-        int base = (clientId % 5) * 5 + 25;
+        int v = (clientId % 5) + 1;
+        // Target portfolio ~₹6L. Some stocks intentionally over-weighted by qty
         return Arrays.asList(
-            new Holding("NVDA",      "NVIDIA Corp.",         base + 5,  15.0),
-            new Holding("AAPL",      "Apple Inc.",           base + 12, 15.0),
-            new Holding("MSFT",      "Microsoft Corp.",      base + 8,  12.0),
-            new Holding("AMZN",      "Amazon.com Inc.",      base + 10, 12.0),
-            new Holding("GOOGL",     "Alphabet Inc.",        base + 10, 10.0),
-            new Holding("META",      "Meta Platforms",       base + 4,  10.0),
-            new Holding("TSLA",      "Tesla Inc.",           base + 8,   8.0),
-            new Holding("RELIANCE",  "Reliance Industries",  base + 2,   8.0),
-            new Holding("TCS",       "TCS Ltd.",             base + 1,   5.0),
-            new Holding("BAJFINANCE","Bajaj Finance",        base + 1,   5.0)
+            new Holding("NVDA",      "NVIDIA Corp.",         12 + v,    15.0),  // ₹875 × 12 = ₹10.5K
+            new Holding("AAPL",      "Apple Inc.",           55 + v*3,  15.0),  // ₹187 × 55 = ₹10.3K
+            new Holding("MSFT",      "Microsoft Corp.",      20 + v*2,  12.0),
+            new Holding("AMZN",      "Amazon.com Inc.",      45 + v*3,  12.0),
+            new Holding("GOOGL",     "Alphabet Inc.",        40 + v*2,  10.0),
+            new Holding("META",      "Meta Platforms",       14 + v,    10.0),
+            new Holding("TSLA",      "Tesla Inc.",           32 + v*2,   8.0),
+            new Holding("RELIANCE",  "Reliance Industries",  18 + v,     8.0),
+            new Holding("TCS",       "TCS Ltd.",              9 + v,     5.0),
+            new Holding("BAJFINANCE","Bajaj Finance",         5 + v,     5.0)
         );
     }
 
     // ---------------------------------------------------------------
     // AGGRESSIVE PORTFOLIO: 6 holdings, concentrated in high-vol stocks
     // Total target allocation = 100%
-    // NOTE: NVDA and TSLA targets are >20% — WILL trigger concentration breach
-    // This is intentional — these portfolios represent high-risk investors
+    // NOTE: Quantities intentionally create >20% concentration in NVDA/TSLA
+    // This guarantees CONCENTRATION_RISK breach → HIGH risk level
     // ---------------------------------------------------------------
     private List<Holding> buildAggressiveHoldings(int clientId) {
-        int base = (clientId % 5) * 5 + 30;
+        int v = (clientId % 5) + 1;
+        // NVDA and TSLA get disproportionally high quantities
+        // to ensure concentration breach (>20% of portfolio value)
         return Arrays.asList(
-            new Holding("NVDA",   "NVIDIA Corp.",    base + 12, 30.0),   // >20% — intentional breach
-            new Holding("TSLA",   "Tesla Inc.",      base + 20, 25.0),   // >20% — intentional breach
-            new Holding("META",   "Meta Platforms",  base + 6,  20.0),
-            new Holding("AMZN",   "Amazon.com Inc.", base + 10, 10.0),
-            new Holding("GOOGL",  "Alphabet Inc.",   base + 10,  8.0),
-            new Holding("AAPL",   "Apple Inc.",      base + 10,  7.0)
+            new Holding("NVDA",   "NVIDIA Corp.",    30 + v*3, 30.0),   // ₹875×33 = ₹28.9K → ~35% of portfolio
+            new Holding("TSLA",   "Tesla Inc.",     100 + v*5, 25.0),   // ₹172×105 = ₹18.1K → ~22%
+            new Holding("META",   "Meta Platforms",  10 + v,   20.0),   // ₹505×11 = ₹5.6K → ~7% (under target)
+            new Holding("AMZN",   "Amazon.com Inc.", 30 + v*2, 10.0),
+            new Holding("GOOGL",  "Alphabet Inc.",   25 + v*2,  8.0),
+            new Holding("AAPL",   "Apple Inc.",      20 + v*2,  7.0)
         );
     }
 }
