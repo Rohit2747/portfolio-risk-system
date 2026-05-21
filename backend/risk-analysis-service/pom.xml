@@ -68,6 +68,12 @@
             <artifactId>cloudwatchlogs</artifactId>
         </dependency>
 
+        <!-- Amazon CloudWatch Metrics - custom metrics publishing -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatch</artifactId>
+        </dependency>
+
         <!-- AWS Core - credentials, region config -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
