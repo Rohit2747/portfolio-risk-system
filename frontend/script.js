@@ -466,12 +466,18 @@ async function exportAIReportPDF() {
     </div>
   `;
   
+  // Append to DOM temporarily (required for html2canvas to render properly)
+  pdfContent.style.position = 'fixed';
+  pdfContent.style.left = '-9999px';
+  pdfContent.style.top = '0';
+  document.body.appendChild(pdfContent);
+
   // Generate PDF using html2pdf
   const opt = {
     margin: [10, 10, 10, 10],
     filename: `AI_Risk_Report_${clientName.replace(/\s+/g, '_')}_${now.toISOString().split('T')[0]}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
@@ -481,6 +487,9 @@ async function exportAIReportPDF() {
   } catch (err) {
     showToast('Export Failed', `Could not generate PDF: ${err.message}`, 'danger');
   }
+  
+  // Remove from DOM
+  document.body.removeChild(pdfContent);
   
   // Reset button
   if (btn) {
