@@ -271,7 +271,9 @@ function updateDashboardSummary(riskData) {
   healthScore -= dropCount * 2.0;
   healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
 
-  document.getElementById("health-score").textContent = `AI Health Score: ${healthScore}/100`;
+  if (!selectedClient) {
+    document.getElementById("health-score").textContent = `AI Health Score: ${healthScore}/100`;
+  }
 
   // ---- AI Recommendation ----
   let recommendation = "";
@@ -289,12 +291,14 @@ function updateDashboardSummary(riskData) {
   }
   document.getElementById("ai-recommendation").innerHTML = recommendation;
 
-  // ---- Risk Meter ----
-  const fill = document.querySelector(".risk-fill");
-  const riskScore = 100 - healthScore;
-  fill.style.width = riskScore + "%";
-  fill.style.background = riskScore > 60 ? "red" : riskScore > 30 ? "orange" : "lime";
-  document.getElementById("risk-percentage").textContent = `Risk Score: ${riskScore}%`;
+  // ---- Risk Meter (only update if no client is selected) ----
+  if (!selectedClient) {
+    const fill = document.querySelector(".risk-fill");
+    const riskScore = 100 - healthScore;
+    fill.style.width = riskScore + "%";
+    fill.style.background = riskScore > 60 ? "red" : riskScore > 30 ? "orange" : "lime";
+    document.getElementById("risk-percentage").textContent = `Risk Score: ${riskScore}%`;
+  }
 
   // Update top stats
   const highRiskEl = document.querySelector(".top-card:nth-child(4) p");
