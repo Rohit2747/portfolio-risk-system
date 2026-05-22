@@ -7,38 +7,56 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 /**
  * PortfolioDataStore
  *
- * Generates 100 simulated client portfolios, each with a different
- * mix of holdings from 20 equities.
+ * Generates 100 unique client portfolios using a seeded random approach.
+ * Each client gets a unique combination of stocks and quantities based on
+ * their clientId as a seed — ensuring deterministic but varied output.
  *
- * Each portfolio uses one of 4 model allocations:
- *  - CONSERVATIVE  (Clients 1-25)  : LOW risk — well-diversified, no breaches
- *  - BALANCED      (Clients 26-50) : LOW risk — evenly spread, no breaches
- *  - GROWTH        (Clients 51-75) : MEDIUM risk — some allocation drift
- *  - AGGRESSIVE    (Clients 76-100): HIGH risk — intentional concentration breaches
- *
- * Target allocations across holdings always sum to 100%.
- *
- * IMPORTANT: Quantities are carefully calibrated against BASE PRICES
- * from PriceSimulatorService to ensure the actual value percentages
- * match the target allocations closely.
+ * Risk distribution:
+ *   Clients 1–25  : Conservative → LOW risk (no breaches)
+ *   Clients 26–50 : Balanced → LOW risk (no breaches)
+ *   Clients 51–75 : Growth → MEDIUM risk (allocation drift only)
+ *   Clients 76–100: Aggressive → HIGH risk (concentration + drift)
  *
  * Base prices used for calibration:
- *   AAPL=187.50, MSFT=415.20, NVDA=875.40, AMZN=182.30, GOOGL=175.60
- *   META=505.80, TSLA=172.40, RELIANCE=2985.50, HDFCBANK=1678.90
- *   INFY=183.25, TCS=3912.00, WIPRO=538.60, ICICIBANK=1087.30
- *   SBIN=815.70, BAJFINANCE=7285.40, ASIANPAINT=2895.60
- *   HINDUNILVR=2534.80, KOTAKBANK=1834.20, LT=3478.90, SUNPHARMA=1567.30
+ *   AAPL=187, MSFT=415, NVDA=875, AMZN=182, GOOGL=175, META=505, TSLA=172
+ *   RELIANCE=2985, HDFCBANK=1678, INFY=183, TCS=3912, WIPRO=538
+ *   ICICIBANK=1087, SBIN=815, BAJFINANCE=7285, ASIANPAINT=2895
+ *   HINDUNILVR=2534, KOTAKBANK=1834, LT=3478, SUNPHARMA=1567
  */
 @Service
 public class PortfolioDataStore {
 
-    // ---------------------------------------------------------------
-    // 20 Equities: symbol, name
-    // ---------------------------------------------------------------
+    // 20 Equities with base prices for quantity calculation
+    private static final String[][] STOCK_INFO = {
+        // symbol, name, basePrice
+        { "AAPL",       "Apple Inc.",            "187"  },
+        { "MSFT",       "Microsoft Corp.",       "415"  },
+        { "NVDA",       "NVIDIA Corp.",          "875"  },
+        { "AMZN",       "Amazon.com Inc.",       "182"  },
+        { "GOOGL",      "Alphabet Inc.",         "175"  },
+        { "META",       "Meta Platforms",        "505"  },
+        { "TSLA",       "Tesla Inc.",            "172"  },
+        { "RELIANCE",   "Reliance Industries",   "2985" },
+        { "HDFCBANK",   "HDFC Bank",             "1678" },
+        { "INFY",       "Infosys Ltd.",          "183"  },
+        { "TCS",        "TCS Ltd.",              "3912" },
+        { "WIPRO",      "Wipro Ltd.",            "538"  },
+        { "ICICIBANK",  "ICICI Bank",            "1087" },
+        { "SBIN",       "State Bank of India",   "815"  },
+        { "BAJFINANCE", "Bajaj Finance",         "7285" },
+        { "ASIANPAINT", "Asian Paints",          "2895" },
+        { "HINDUNILVR", "Hindustan Unilever",    "2534" },
+        { "KOTAKBANK",  "Kotak Mahindra Bank",   "1834" },
+        { "LT",         "Larsen & Toubro",       "3478" },
+        { "SUNPHARMA",  "Sun Pharmaceutical",    "1567" }
+    };
+
+    // Public accessor for equities list (used by controller)
     public static final String[][] EQUITIES = {
         { "AAPL",   "Apple Inc."          },
         { "MSFT",   "Microsoft Corp."     },
@@ -64,7 +82,6 @@ public class PortfolioDataStore {
 
     public List<portfolio> getAllPortfolios() {
         List<portfolio> portfolios = new ArrayList<>();
-
         for (int i = 1; i <= 100; i++) {
             List<Holding> holdings = generateHoldingsForClient(i);
             portfolios.add(new portfolio(
@@ -75,7 +92,6 @@ public class PortfolioDataStore {
                 holdings
             ));
         }
-
         return portfolios;
     }
 
@@ -86,13 +102,6 @@ public class PortfolioDataStore {
             .orElse(null);
     }
 
-    /**
-     * Client groups (NOT sequential risk — mixed across the dashboard):
-     *   1–25   : Conservative → LOW risk
-     *   26–50  : Balanced → LOW risk
-     *   51–75  : Growth → MEDIUM risk (drift from volatile stocks)
-     *   76–100 : Aggressive → HIGH risk (concentration breach)
-     */
     private List<Holding> generateHoldingsForClient(int clientId) {
         if (clientId <= 25) {
             return buildConservativeHoldings(clientId);
@@ -106,162 +115,200 @@ public class PortfolioDataStore {
     }
 
     // ---------------------------------------------------------------
-    // CONSERVATIVE PORTFOLIO → Expected: LOW risk
-    //
-    // All stocks are low-volatility Indian large-caps with similar prices.
-    // Quantities calibrated so each stock's value is close to its target.
-    // No stock should exceed 20%, drift should be < 5%.
-    //
-    // Target portfolio value: ~₹1,00,000
-    // All stocks between ₹800 and ₹2000 range — easy to balance
+    // CONSERVATIVE → LOW risk
+    // Each client gets a unique subset of 7-8 stocks from a pool of stable stocks.
+    // Quantities calibrated so no stock exceeds 18% of portfolio.
     // ---------------------------------------------------------------
     private List<Holding> buildConservativeHoldings(int clientId) {
-        int v = clientId % 5;  // variation 0-4
-        // Using stocks with SIMILAR prices to avoid concentration
-        // SBIN=815, ICICIBANK=1087, HDFCBANK=1678, SUNPHARMA=1567, WIPRO=538, INFY=183
-        return Arrays.asList(
-            new Holding("SBIN",      "State Bank of India",  12 + v, 15.0),    // ~₹9,788  = ~15%
-            new Holding("ICICIBANK", "ICICI Bank",           9 + v,  15.0),    // ~₹9,785  = ~15%
-            new Holding("HDFCBANK",  "HDFC Bank",            6 + v,  15.0),    // ~₹10,073 = ~15%
-            new Holding("SUNPHARMA", "Sun Pharmaceutical",   6 + v,  14.0),    // ~₹9,403  = ~14%
-            new Holding("WIPRO",     "Wipro Ltd.",           14 + v, 11.0),    // ~₹7,540  = ~11%
-            new Holding("KOTAKBANK", "Kotak Mahindra Bank",  4 + v,  11.0),    // ~₹7,336  = ~11%
-            new Holding("INFY",      "Infosys Ltd.",         35 + v, 10.0),    // ~₹6,413  = ~10%
-            new Holding("AAPL",      "Apple Inc.",           28 + v,  9.0)     // ~₹5,250  = ~9%
-        );
+        Random rand = new Random(clientId * 31L);
+        // Pool of stable, similarly-priced stocks
+        int[][] stockPool = {
+            {13, 15}, // SBIN (815) — index 13
+            {12, 14}, // ICICIBANK (1087) — index 12
+            {8,  14}, // HDFCBANK (1678) — index 8
+            {19, 13}, // SUNPHARMA (1567) — index 19
+            {11, 11}, // WIPRO (538) — index 11
+            {17, 12}, // KOTAKBANK (1834) — index 17
+            {9,  10}, // INFY (183) — index 9
+            {0,   9}, // AAPL (187) — index 0
+            {14,  5}, // BAJFINANCE (7285) — index 14 (tiny qty)
+            {7,   6}, // RELIANCE (2985) — index 7 (tiny qty)
+        };
+
+        // Shuffle selection based on clientId
+        int start = clientId % 3;
+        int totalTarget = 100;
+        List<Holding> holdings = new ArrayList<>();
+
+        for (int i = 0; i < 8; i++) {
+            int idx = (start + i) % stockPool.length;
+            int stockIdx = stockPool[idx][0];
+            double target = stockPool[idx][1] + (rand.nextInt(3) - 1);  // slight variation ±1%
+
+            String symbol = STOCK_INFO[stockIdx][0];
+            String name = STOCK_INFO[stockIdx][1];
+            int basePrice = Integer.parseInt(STOCK_INFO[stockIdx][2]);
+
+            // Calculate quantity to match target% of ~₹80,000 portfolio
+            int qty = Math.max(1, (int) Math.round((target / 100.0 * 80000) / basePrice));
+            qty += rand.nextInt(3) - 1; // ±1 share variation
+            if (qty < 1) qty = 1;
+
+            holdings.add(new Holding(symbol, name, qty, target));
+        }
+        return holdings;
     }
 
     // ---------------------------------------------------------------
-    // BALANCED PORTFOLIO → Expected: LOW risk
-    //
-    // Mix of Indian and US stocks, but quantities carefully set.
-    // All positions well under 20% concentration.
-    // Drift should stay within 5% threshold.
-    //
-    // Target portfolio value: ~₹1,50,000
+    // BALANCED → LOW risk
+    // Mix of Indian + US stocks. Each client gets different quantities.
     // ---------------------------------------------------------------
     private List<Holding> buildBalancedHoldings(int clientId) {
-        int v = clientId % 5;
-        return Arrays.asList(
-            new Holding("RELIANCE",  "Reliance Industries",  6 + v,  12.0),   // ~₹17,913 = ~12%
-            new Holding("HDFCBANK",  "HDFC Bank",            10 + v, 11.0),   // ~₹16,789 = ~11%
-            new Holding("TCS",       "TCS Ltd.",             4 + v,  10.0),   // ~₹15,648 = ~10%
-            new Holding("MSFT",      "Microsoft Corp.",      25 + v, 10.0),   // ~₹10,380 = ~7% (drift ~3%)
-            new Holding("INFY",      "Infosys Ltd.",         60 + v, 10.0),   // ~₹10,995 = ~7% (drift ~3%)
-            new Holding("ICICIBANK", "ICICI Bank",           12 + v, 10.0),   // ~₹13,047 = ~9%
-            new Holding("SBIN",      "State Bank of India",  15 + v,  9.0),   // ~₹12,235 = ~8%
-            new Holding("LT",        "Larsen & Toubro",      4 + v,   9.0),   // ~₹13,915 = ~9%
-            new Holding("AAPL",      "Apple Inc.",           50 + v,  9.0),   // ~₹9,375  = ~6% (drift ~3%)
-            new Holding("WIPRO",     "Wipro Ltd.",           20 + v, 10.0)    // ~₹10,772 = ~7% (drift ~3%)
-        );
+        Random rand = new Random(clientId * 47L);
+        // 10 stocks, targets near actual (drift < 5%)
+        int[][] stockPool = {
+            {7,  12}, // RELIANCE
+            {8,  11}, // HDFCBANK
+            {10, 10}, // TCS
+            {1,  10}, // MSFT
+            {9,  10}, // INFY
+            {12, 10}, // ICICIBANK
+            {13,  9}, // SBIN
+            {18,  9}, // LT
+            {0,   9}, // AAPL
+            {11, 10}, // WIPRO
+        };
+
+        int start = (clientId - 26) % 4;
+        List<Holding> holdings = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            int idx = (start + i) % stockPool.length;
+            int stockIdx = stockPool[idx][0];
+            double target = stockPool[idx][1] + (rand.nextInt(3) - 1);
+
+            String symbol = STOCK_INFO[stockIdx][0];
+            String name = STOCK_INFO[stockIdx][1];
+            int basePrice = Integer.parseInt(STOCK_INFO[stockIdx][2]);
+
+            int qty = Math.max(1, (int) Math.round((target / 100.0 * 120000) / basePrice));
+            qty += rand.nextInt(3) - 1;
+            if (qty < 1) qty = 1;
+
+            holdings.add(new Holding(symbol, name, qty, target));
+        }
+        return holdings;
     }
 
     // ---------------------------------------------------------------
-    // GROWTH PORTFOLIO → Expected: MEDIUM risk (ALLOCATION_DRIFT)
-    //
-    // Strategy: Set TARGETS that intentionally DON'T match the actual
-    // value distribution. This guarantees drift > 5% for several stocks.
-    //
-    // Key insight: drift = |actual% - target%|
-    // If actual is 18% but target is 8%, drift = 10% → BREACH!
-    //
-    // But NO single stock exceeds 20% → no CONCENTRATION_RISK
-    // This gives MEDIUM (drift only) not HIGH.
-    //
-    // Portfolio value: ~₹1,00,000
+    // GROWTH → MEDIUM risk (ALLOCATION_DRIFT only, no concentration)
+    // Each client gets different stocks drifting from their targets.
+    // Some stocks have HIGH actual % but LOW target → drift > 5%
+    // No stock exceeds 20% → no CONCENTRATION_RISK
     // ---------------------------------------------------------------
     private List<Holding> buildGrowthHoldings(int clientId) {
-        int v = clientId % 5;
-        // TCS @ ₹3912 × 5 shares = ₹19,560 = ~19% actual BUT target is 8% → drift 11%!
-        // BAJFINANCE @ ₹7285 × 2 shares = ₹14,570 = ~14% actual BUT target is 6% → drift 8%!
-        // AAPL @ ₹187 × 10 shares = ₹1,875 = ~2% actual BUT target is 12% → drift 10%!
-        // This creates guaranteed ALLOCATION_DRIFT breaches without CONCENTRATION breach
-        return Arrays.asList(
-            new Holding("TCS",       "TCS Ltd.",             5 + v,   8.0),   // actual ~19%, target 8% → drift 11% BREACH
-            new Holding("BAJFINANCE","Bajaj Finance",        2 + v,   6.0),   // actual ~14%, target 6% → drift 8% BREACH
-            new Holding("NVDA",      "NVIDIA Corp.",         12 + v,  7.0),   // actual ~13%, target 7% → drift 6% BREACH
-            new Holding("HDFCBANK",  "HDFC Bank",            7 + v,  12.0),   // actual ~12%, target 12% → OK
-            new Holding("RELIANCE",  "Reliance Industries",  3 + v,  12.0),   // actual ~9%, target 12% → drift 3% OK
-            new Holding("MSFT",      "Microsoft Corp.",      12 + v, 15.0),   // actual ~5%, target 15% → drift 10% BREACH
-            new Holding("AAPL",      "Apple Inc.",           10 + v, 15.0),   // actual ~2%, target 15% → drift 13% BREACH
-            new Holding("META",      "Meta Platforms",       8 + v,  10.0),   // actual ~4%, target 10% → drift 6% BREACH
-            new Holding("ICICIBANK", "ICICI Bank",           8 + v,   8.0),   // actual ~9%, target 8% → OK
-            new Holding("SBIN",      "State Bank of India",  10 + v,  7.0)    // actual ~8%, target 7% → OK
-        );
+        Random rand = new Random(clientId * 67L);
+
+        // Pool: {stockIndex, quantity multiplier, target %}
+        // Expensive stocks get many shares (high actual%) but LOW target → DRIFT BREACH
+        // Cheap stocks get few shares (low actual%) but HIGH target → DRIFT BREACH
+        int[][] driftConfigs = {
+            {10, 5,  8},  // TCS (₹3912) → high value, low target → DRIFT
+            {14, 2,  6},  // BAJFINANCE (₹7285) → high value, low target → DRIFT
+            {2, 10,  7},  // NVDA (₹875) → moderate value, low target → DRIFT
+            {8,  7, 12},  // HDFCBANK → matches target (OK)
+            {7,  3, 12},  // RELIANCE → matches target (OK)
+            {1, 12, 15},  // MSFT (₹415) → low value, high target → DRIFT
+            {0, 10, 15},  // AAPL (₹187) → low value, high target → DRIFT
+            {5,  6, 10},  // META (₹505) → moderate
+            {12, 8,  8},  // ICICIBANK → matches (OK)
+            {13, 10, 7},  // SBIN → matches (OK)
+        };
+
+        // Rotate which stocks are included based on clientId
+        int rotation = (clientId - 51) % 5;
+        List<Holding> holdings = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            int cfgIdx = (i + rotation) % driftConfigs.length;
+            int stockIdx = driftConfigs[cfgIdx][0];
+            int baseQty = driftConfigs[cfgIdx][1];
+            double target = driftConfigs[cfgIdx][2];
+
+            String symbol = STOCK_INFO[stockIdx][0];
+            String name = STOCK_INFO[stockIdx][1];
+
+            // Add client-specific variation
+            int qty = baseQty + rand.nextInt(4) - 1;
+            if (qty < 1) qty = 1;
+            target += rand.nextInt(3) - 1;
+            if (target < 3) target = 3;
+
+            holdings.add(new Holding(symbol, name, qty, target));
+        }
+        return holdings;
     }
 
     // ---------------------------------------------------------------
-    // AGGRESSIVE PORTFOLIO → Expected: HIGH risk
-    //
-    // Shows CONCENTRATION_RISK + ALLOCATION_DRIFT breaches.
-    //
-    // Different clients are over-concentrated in DIFFERENT stocks
-    // (realistic — not everyone makes the same mistake).
-    //
-    // 5 variations based on clientId % 5:
-    //   Group 0: Over-concentrated in TCS
-    //   Group 1: Over-concentrated in BAJFINANCE
-    //   Group 2: Over-concentrated in RELIANCE
-    //   Group 3: Over-concentrated in LT (Larsen & Toubro)
-    //   Group 4: Over-concentrated in HDFCBANK
+    // AGGRESSIVE → HIGH risk (CONCENTRATION_RISK + ALLOCATION_DRIFT)
+    // Each client has a DIFFERENT dominant stock causing concentration.
+    // Uses 10 different "problem stocks" rotating by clientId.
     // ---------------------------------------------------------------
     private List<Holding> buildAggressiveHoldings(int clientId) {
-        int group = clientId % 5;
+        Random rand = new Random(clientId * 89L);
 
-        return switch (group) {
-            case 0 -> Arrays.asList(
-                // Over-concentrated in TCS (₹3912)
-                new Holding("TCS",       "TCS Ltd.",            9,  10.0),   // actual ~40% → CONCENTRATION
-                new Holding("BAJFINANCE","Bajaj Finance",       2,  15.0),   // actual ~17%
-                new Holding("AAPL",      "Apple Inc.",         25,  20.0),   // actual ~5% → DRIFT
-                new Holding("MSFT",      "Microsoft Corp.",    12,  20.0),   // actual ~6% → DRIFT
-                new Holding("SBIN",      "State Bank of India",12,  15.0),   // actual ~11%
-                new Holding("INFY",      "Infosys Ltd.",       60,  20.0)    // actual ~13% → DRIFT
-            );
-            case 1 -> Arrays.asList(
-                // Over-concentrated in BAJFINANCE (₹7285)
-                new Holding("BAJFINANCE","Bajaj Finance",       4,  10.0),   // actual ~45% → CONCENTRATION
-                new Holding("TCS",       "TCS Ltd.",            3,  15.0),   // actual ~18%
-                new Holding("GOOGL",     "Alphabet Inc.",      30,  20.0),   // actual ~8% → DRIFT
-                new Holding("AMZN",      "Amazon.com Inc.",    30,  20.0),   // actual ~8% → DRIFT
-                new Holding("WIPRO",     "Wipro Ltd.",         15,  15.0),   // actual ~12%
-                new Holding("SUNPHARMA", "Sun Pharmaceutical",  3,  20.0)    // actual ~7% → DRIFT
-            );
-            case 2 -> Arrays.asList(
-                // Over-concentrated in RELIANCE (₹2985)
-                new Holding("RELIANCE",  "Reliance Industries", 8,  10.0),   // actual ~38% → CONCENTRATION
-                new Holding("HDFCBANK",  "HDFC Bank",           5,  15.0),   // actual ~13%
-                new Holding("META",      "Meta Platforms",      5,  20.0),   // actual ~4% → DRIFT
-                new Holding("AAPL",      "Apple Inc.",          30,  20.0),   // actual ~9% → DRIFT
-                new Holding("ICICIBANK", "ICICI Bank",          8,  15.0),   // actual ~14%
-                new Holding("NVDA",      "NVIDIA Corp.",        3,  20.0)    // actual ~4% → DRIFT
-            );
-            case 3 -> Arrays.asList(
-                // Over-concentrated in LT (₹3478)
-                new Holding("LT",        "Larsen & Toubro",     7,  10.0),   // actual ~37% → CONCENTRATION
-                new Holding("KOTAKBANK", "Kotak Mahindra Bank", 4,  15.0),   // actual ~11%
-                new Holding("TSLA",      "Tesla Inc.",          40,  20.0),   // actual ~10% → DRIFT
-                new Holding("GOOGL",     "Alphabet Inc.",       25,  20.0),   // actual ~7% → DRIFT
-                new Holding("HINDUNILVR","Hindustan Unilever",  3,  15.0),   // actual ~12%
-                new Holding("SBIN",      "State Bank of India", 15,  20.0)    // actual ~19%
-            );
-            case 4 -> Arrays.asList(
-                // Over-concentrated in HDFCBANK (₹1678) — needs more shares
-                new Holding("HDFCBANK",  "HDFC Bank",          12,  10.0),   // actual ~35% → CONCENTRATION
-                new Holding("ASIANPAINT","Asian Paints",        3,  15.0),   // actual ~15%
-                new Holding("AMZN",      "Amazon.com Inc.",    20,  20.0),   // actual ~6% → DRIFT
-                new Holding("MSFT",      "Microsoft Corp.",     8,  20.0),   // actual ~6% → DRIFT
-                new Holding("SUNPHARMA", "Sun Pharmaceutical",  3,  15.0),   // actual ~8%
-                new Holding("INFY",      "Infosys Ltd.",       80,  20.0)    // actual ~25% → CONCENTRATION
-            );
-            default -> Arrays.asList(
-                new Holding("TCS",       "TCS Ltd.",            9,  10.0),
-                new Holding("BAJFINANCE","Bajaj Finance",       2,  15.0),
-                new Holding("AAPL",      "Apple Inc.",         25,  20.0),
-                new Holding("MSFT",      "Microsoft Corp.",    12,  20.0),
-                new Holding("SBIN",      "State Bank of India",12,  15.0),
-                new Holding("INFY",      "Infosys Ltd.",       60,  20.0)
-            );
+        // 10 possible "dominant" stocks that can cause concentration
+        // Each has enough value at reasonable quantities to exceed 20%
+        int[][] dominantStocks = {
+            {10, 9},   // TCS (₹3912) × 9 = ₹35,208
+            {14, 4},   // BAJFINANCE (₹7285) × 4 = ₹29,140
+            {7,  8},   // RELIANCE (₹2985) × 8 = ₹23,880
+            {18, 7},   // LT (₹3478) × 7 = ₹24,346
+            {8, 12},   // HDFCBANK (₹1678) × 12 = ₹20,136
+            {15, 7},   // ASIANPAINT (₹2895) × 7 = ₹20,265
+            {16, 8},   // HINDUNILVR (₹2534) × 8 = ₹20,272
+            {17, 11},  // KOTAKBANK (₹1834) × 11 = ₹20,174
+            {19, 13},  // SUNPHARMA (₹1567) × 13 = ₹20,371
+            {12, 19},  // ICICIBANK (₹1087) × 19 = ₹20,653
         };
+
+        // Pick dominant stock based on clientId (each client gets a different one)
+        int dominantIdx = (clientId - 76) % 10;
+        int domStockIdx = dominantStocks[dominantIdx][0];
+        int domQty = dominantStocks[dominantIdx][1] + rand.nextInt(3);
+
+        String domSymbol = STOCK_INFO[domStockIdx][0];
+        String domName = STOCK_INFO[domStockIdx][1];
+
+        // Build portfolio: 1 dominant + 5 supporting stocks
+        List<Holding> holdings = new ArrayList<>();
+        holdings.add(new Holding(domSymbol, domName, domQty, 10.0)); // target 10% but actual >30% → CONCENTRATION + DRIFT
+
+        // Pick 5 different supporting stocks (small positions)
+        int[] supportOptions = {0, 1, 3, 4, 5, 6, 9, 11, 13};  // cheap stocks
+        int supportStart = (clientId * 3) % supportOptions.length;
+
+        double remainingTarget = 90.0;
+        for (int i = 0; i < 5; i++) {
+            int sIdx = supportOptions[(supportStart + i) % supportOptions.length];
+            if (sIdx == domStockIdx) sIdx = (sIdx + 1) % 20; // avoid duplicate
+
+            String symbol = STOCK_INFO[sIdx][0];
+            String name = STOCK_INFO[sIdx][1];
+            int basePrice = Integer.parseInt(STOCK_INFO[sIdx][2]);
+
+            double target = remainingTarget / (5 - i) + (rand.nextInt(5) - 2);
+            if (target < 10) target = 10;
+            if (target > 25) target = 25;
+
+            // Small quantity — these won't breach anything
+            int qty = Math.max(1, (int) Math.round((8.0 / 100.0 * 60000) / basePrice));
+            qty += rand.nextInt(5);
+
+            holdings.add(new Holding(symbol, name, qty, target));
+            remainingTarget -= target;
+        }
+
+        return holdings;
     }
 }
