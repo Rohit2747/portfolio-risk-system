@@ -202,43 +202,49 @@ public class PortfolioDataStore {
 
     // ---------------------------------------------------------------
     // GROWTH → MEDIUM risk (ALLOCATION_DRIFT only, no concentration)
-    // Each client gets different stocks drifting from their targets.
-    // Some stocks have HIGH actual % but LOW target → drift > 5%
-    // No stock exceeds 20% → no CONCENTRATION_RISK
+    // Each client gets DIFFERENT stocks drifting from their targets.
+    // Multiple drift breaches per client (3-5 stocks drifting).
+    // No stock exceeds 20% → no CONCENTRATION_RISK.
+    // Uses 15 different stock configs rotated per client.
     // ---------------------------------------------------------------
     private List<Holding> buildGrowthHoldings(int clientId) {
         Random rand = new Random(clientId * 67L);
 
-        // Pool: {stockIndex, quantity multiplier, target %}
-        // Expensive stocks get many shares (high actual%) but LOW target → DRIFT BREACH
-        // Cheap stocks get few shares (low actual%) but HIGH target → DRIFT BREACH
-        int[][] driftConfigs = {
-            {10, 5,  8},  // TCS (₹3912) → high value, low target → DRIFT
-            {14, 2,  6},  // BAJFINANCE (₹7285) → high value, low target → DRIFT
-            {2, 10,  7},  // NVDA (₹875) → moderate value, low target → DRIFT
-            {8,  7, 12},  // HDFCBANK → matches target (OK)
-            {7,  3, 12},  // RELIANCE → matches target (OK)
-            {1, 12, 15},  // MSFT (₹415) → low value, high target → DRIFT
-            {0, 10, 15},  // AAPL (₹187) → low value, high target → DRIFT
-            {5,  6, 10},  // META (₹505) → moderate
-            {12, 8,  8},  // ICICIBANK → matches (OK)
-            {13, 10, 7},  // SBIN → matches (OK)
+        // 15 possible drift-causing configs: {stockIndex, baseQty, target%}
+        // Expensive stocks with many shares → actual% HIGH, target% LOW → DRIFT
+        // Cheap stocks with few shares → actual% LOW, target% HIGH → DRIFT
+        int[][] allDriftConfigs = {
+            {10, 5,  7},   // TCS (₹3912) → high value, low target → DRIFT
+            {14, 2,  5},   // BAJFINANCE (₹7285) → high value, low target → DRIFT
+            {2, 12,  6},   // NVDA (₹875) → high value, low target → DRIFT
+            {7,  3,  6},   // RELIANCE (₹2985) → high value, low target → DRIFT
+            {18, 3,  6},   // LT (₹3478) → high value, low target → DRIFT
+            {15, 3,  6},   // ASIANPAINT (₹2895) → high value, low target → DRIFT
+            {0,  8, 18},   // AAPL (₹187) → low value, high target → DRIFT
+            {1,  8, 16},   // MSFT (₹415) → low value, high target → DRIFT
+            {3,  8, 16},   // AMZN (₹182) → low value, high target → DRIFT
+            {4,  8, 16},   // GOOGL (₹175) → low value, high target → DRIFT
+            {6, 10, 16},   // TSLA (₹172) → low value, high target → DRIFT
+            {9, 12, 14},   // INFY (₹183) → low value, high target → DRIFT
+            {8,  6, 12},   // HDFCBANK → moderate, matches → OK
+            {12, 7,  8},   // ICICIBANK → moderate, matches → OK
+            {13, 9,  7},   // SBIN → moderate, matches → OK
         };
 
-        // Rotate which stocks are included based on clientId
-        int rotation = (clientId - 51) % 5;
+        // Each client gets a different selection of 8 stocks from the 15
+        int startOffset = ((clientId - 51) * 3) % 15;
         List<Holding> holdings = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
-            int cfgIdx = (i + rotation) % driftConfigs.length;
-            int stockIdx = driftConfigs[cfgIdx][0];
-            int baseQty = driftConfigs[cfgIdx][1];
-            double target = driftConfigs[cfgIdx][2];
+        for (int i = 0; i < 8; i++) {
+            int cfgIdx = (startOffset + i * 2) % allDriftConfigs.length;
+            int stockIdx = allDriftConfigs[cfgIdx][0];
+            int baseQty = allDriftConfigs[cfgIdx][1];
+            double target = allDriftConfigs[cfgIdx][2];
 
             String symbol = STOCK_INFO[stockIdx][0];
             String name = STOCK_INFO[stockIdx][1];
 
-            // Add client-specific variation
+            // Client-specific variation
             int qty = baseQty + rand.nextInt(4) - 1;
             if (qty < 1) qty = 1;
             target += rand.nextInt(3) - 1;
@@ -251,62 +257,72 @@ public class PortfolioDataStore {
 
     // ---------------------------------------------------------------
     // AGGRESSIVE → HIGH risk (CONCENTRATION_RISK + ALLOCATION_DRIFT)
-    // Each client has a DIFFERENT dominant stock causing concentration.
-    // Uses 10 different "problem stocks" rotating by clientId.
+    // Each client has TWO dominant stocks causing concentration (>20%).
+    // Plus allocation drift on remaining stocks.
+    // This shows multiple breach types per client.
     // ---------------------------------------------------------------
     private List<Holding> buildAggressiveHoldings(int clientId) {
         Random rand = new Random(clientId * 89L);
 
-        // 10 possible "dominant" stocks that can cause concentration
-        // Each has enough value at reasonable quantities to exceed 20%
-        int[][] dominantStocks = {
-            {10, 9},   // TCS (₹3912) × 9 = ₹35,208
-            {14, 4},   // BAJFINANCE (₹7285) × 4 = ₹29,140
-            {7,  8},   // RELIANCE (₹2985) × 8 = ₹23,880
-            {18, 7},   // LT (₹3478) × 7 = ₹24,346
-            {8, 12},   // HDFCBANK (₹1678) × 12 = ₹20,136
-            {15, 7},   // ASIANPAINT (₹2895) × 7 = ₹20,265
-            {16, 8},   // HINDUNILVR (₹2534) × 8 = ₹20,272
-            {17, 11},  // KOTAKBANK (₹1834) × 11 = ₹20,174
-            {19, 13},  // SUNPHARMA (₹1567) × 13 = ₹20,371
-            {12, 19},  // ICICIBANK (₹1087) × 19 = ₹20,653
+        // Pairs of dominant stocks — each client gets 2 concentrated positions
+        // {stockIndex, quantity} — each pair causes >20% concentration
+        int[][][] dominantPairs = {
+            {{10, 8}, {14, 3}},   // TCS + BAJFINANCE
+            {{14, 4}, {7, 7}},    // BAJFINANCE + RELIANCE
+            {{7, 8}, {18, 6}},    // RELIANCE + LT
+            {{18, 7}, {8, 11}},   // LT + HDFCBANK
+            {{8, 12}, {15, 7}},   // HDFCBANK + ASIANPAINT
+            {{15, 7}, {16, 8}},   // ASIANPAINT + HINDUNILVR
+            {{16, 8}, {17, 10}},  // HINDUNILVR + KOTAKBANK
+            {{17, 11}, {10, 7}},  // KOTAKBANK + TCS
+            {{10, 9}, {7, 6}},    // TCS + RELIANCE
+            {{14, 3}, {18, 7}},   // BAJFINANCE + LT
         };
 
-        // Pick dominant stock based on clientId (each client gets a different one)
-        int dominantIdx = (clientId - 76) % 10;
-        int domStockIdx = dominantStocks[dominantIdx][0];
-        int domQty = dominantStocks[dominantIdx][1] + rand.nextInt(3);
+        // Pick pair based on clientId
+        int pairIdx = (clientId - 76) % 10;
+        int[][] pair = dominantPairs[pairIdx];
 
-        String domSymbol = STOCK_INFO[domStockIdx][0];
-        String domName = STOCK_INFO[domStockIdx][1];
+        int dom1StockIdx = pair[0][0];
+        int dom1Qty = pair[0][1] + rand.nextInt(2);
+        int dom2StockIdx = pair[1][0];
+        int dom2Qty = pair[1][1] + rand.nextInt(2);
 
-        // Build portfolio: 1 dominant + 5 supporting stocks
         List<Holding> holdings = new ArrayList<>();
-        holdings.add(new Holding(domSymbol, domName, domQty, 10.0)); // target 10% but actual >30% → CONCENTRATION + DRIFT
 
-        // Pick 5 different supporting stocks (small positions)
-        int[] supportOptions = {0, 1, 3, 4, 5, 6, 9, 11, 13};  // cheap stocks
+        // First dominant stock — target 10% but actual >25% → CONCENTRATION + DRIFT
+        holdings.add(new Holding(
+            STOCK_INFO[dom1StockIdx][0], STOCK_INFO[dom1StockIdx][1],
+            dom1Qty, 10.0
+        ));
+
+        // Second dominant stock — target 10% but actual >20% → CONCENTRATION + DRIFT
+        holdings.add(new Holding(
+            STOCK_INFO[dom2StockIdx][0], STOCK_INFO[dom2StockIdx][1],
+            dom2Qty, 10.0
+        ));
+
+        // Pick 4 supporting stocks (small positions with drift)
+        int[] supportOptions = {0, 1, 3, 4, 5, 6, 9, 11, 13, 19};
         int supportStart = (clientId * 3) % supportOptions.length;
 
-        double remainingTarget = 90.0;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             int sIdx = supportOptions[(supportStart + i) % supportOptions.length];
-            if (sIdx == domStockIdx) sIdx = (sIdx + 1) % 20; // avoid duplicate
+            // Avoid duplicates with dominant stocks
+            if (sIdx == dom1StockIdx || sIdx == dom2StockIdx) {
+                sIdx = supportOptions[(supportStart + i + 5) % supportOptions.length];
+            }
 
             String symbol = STOCK_INFO[sIdx][0];
             String name = STOCK_INFO[sIdx][1];
             int basePrice = Integer.parseInt(STOCK_INFO[sIdx][2]);
 
-            double target = remainingTarget / (5 - i) + (rand.nextInt(5) - 2);
-            if (target < 10) target = 10;
-            if (target > 25) target = 25;
-
-            // Small quantity — these won't breach anything
-            int qty = Math.max(1, (int) Math.round((8.0 / 100.0 * 60000) / basePrice));
-            qty += rand.nextInt(5);
+            // Small quantity but HIGH target → creates ALLOCATION_DRIFT breach too
+            double target = 15.0 + rand.nextInt(6);
+            int qty = Math.max(1, (int) Math.round((5.0 / 100.0 * 50000) / basePrice));
+            qty += rand.nextInt(3);
 
             holdings.add(new Holding(symbol, name, qty, target));
-            remainingTarget -= target;
         }
 
         return holdings;
