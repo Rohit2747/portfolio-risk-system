@@ -53,6 +53,27 @@ let allMarketData  = [];   // market prices from /market-data
 let selectedClient = null; // currently selected portfolio card
 
 // ---------------------------------------------------------------
+// HELPER: Update Health Score Widget
+// ---------------------------------------------------------------
+function updateHealthScoreWidget(score) {
+  const el = document.getElementById("health-score");
+  const fill = document.getElementById("health-score-fill");
+  const status = document.getElementById("health-score-status");
+  if (el) el.textContent = `${score} / 100`;
+  if (fill) {
+    fill.style.width = `${score}%`;
+    if (score >= 75) fill.style.background = "linear-gradient(90deg, #00e5ff, #00ff64)";
+    else if (score >= 45) fill.style.background = "linear-gradient(90deg, #ffaa00, #ff6b00)";
+    else fill.style.background = "linear-gradient(90deg, #ff5e5e, #ff2020)";
+  }
+  if (status) {
+    if (score >= 75) { status.textContent = "Healthy"; status.style.color = "#00ff64"; }
+    else if (score >= 45) { status.textContent = "Moderate Risk"; status.style.color = "orange"; }
+    else { status.textContent = "Critical"; status.style.color = "#ff5e5e"; }
+  }
+}
+
+// ---------------------------------------------------------------
 // FETCH: Portfolio Data (port 8080)
 // Enriches with value & risk level from Risk Analysis data
 // ---------------------------------------------------------------
@@ -272,7 +293,7 @@ function updateDashboardSummary(riskData) {
   healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
 
   if (!selectedClient) {
-    document.getElementById("health-score").textContent = `AI Health Score: ${healthScore}/100`;
+    updateHealthScoreWidget(healthScore);
   }
 
   // ---- AI Recommendation ----
@@ -536,7 +557,7 @@ function renderRiskPanel(riskData) {
   }
   clientHealthScore = Math.max(0, Math.min(100, clientHealthScore));
 
-  document.getElementById("health-score").textContent = `AI Health Score: ${clientHealthScore}/100`;
+  updateHealthScoreWidget(clientHealthScore);
 
   const clientRiskScore = 100 - clientHealthScore;
   const fill = document.querySelector(".risk-fill");
