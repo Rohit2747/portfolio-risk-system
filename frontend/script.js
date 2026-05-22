@@ -51,6 +51,7 @@ const companyLogos = {
 let allRiskData    = [];   // full risk analysis from /risk-analysis
 let allMarketData  = [];   // market prices from /market-data
 let selectedClient = null; // currently selected portfolio card
+let aiReportPinned = false; // true when AI report is displayed, prevents polling overwrite
 
 // ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
@@ -182,7 +183,7 @@ async function loadRiskAnalysis() {
     loadPortfolioData();
 
     // If a client is selected, refresh their panel too
-    if (selectedClient) {
+    if (selectedClient && !aiReportPinned) {
       const updated = allRiskData.find(r => r.clientId === selectedClient);
       if (updated) renderRiskPanel(updated);
     }
@@ -201,6 +202,7 @@ async function loadRiskAnalysis() {
 // ---------------------------------------------------------------
 function updateDashboardSummary(riskData) {
   if (!riskData || riskData.length === 0) return;
+  if (aiReportPinned) return;
 
   const total        = riskData.length;
   const highCount    = riskData.filter(r => r.riskLevel === "HIGH").length;
@@ -354,6 +356,8 @@ function updateDashboardSummary(riskData) {
 // CLIENT SELECTION — click on a portfolio card
 // ---------------------------------------------------------------
 function selectClient(clientId, clientName, riskLevel, portfolioValue, event) {
+  aiReportPinned = false;
+
   // Highlight selected card
   document.querySelectorAll(".portfolio-card").forEach(card => {
     card.style.border = "1px solid rgba(255,255,255,0.1)";
@@ -484,6 +488,8 @@ async function generateAIReport(clientId) {
       setTimeout(() => aiCard.classList.remove("ai-highlight"), 2000);
     }
 
+    aiReportPinned = true;
+
     // Update button to success state
     if (btn) {
       btn.innerHTML = '<i class="fa-solid fa-check"></i> Report Generated';
@@ -573,9 +579,11 @@ function renderRiskPanel(riskData) {
   // Also update AI panel with local insight (overridden if AI service responds)
   const suggestion = riskData.aiInsight || riskData.suggestedAction || riskData.suggestion
     || buildLocalInsight(riskData);
-  document.getElementById("ai-summary").textContent =
-    buildLocalExplanation(riskData);
-  document.getElementById("ai-recommendation").innerHTML = suggestion;
+  if (!aiReportPinned) {
+    document.getElementById("ai-summary").textContent =
+      buildLocalExplanation(riskData);
+    document.getElementById("ai-recommendation").innerHTML = suggestion;
+  }
 
   const healthStatus = document.getElementById("health-status");
   healthStatus.textContent = riskData.riskLevel;
