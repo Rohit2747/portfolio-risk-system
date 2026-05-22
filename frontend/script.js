@@ -13,36 +13,53 @@ const RISK_SERVICE_URL       = "http://localhost:8082";
 const AI_INSIGHT_SERVICE_URL = "http://localhost:8083";
 
 // ---------------------------------------------------------------
-// COMPANY LOGOS
+// COMPANY AVATAR COLORS — unique color per stock for letter avatars
 // ---------------------------------------------------------------
-const companyLogos = {
-  "AAPL":        "images/apple.png",
-  "MSFT":        "images/microsoft.jpeg",
-  "NVDA":        "images/NVIDIA.png",
-  "AMZN":        "images/amazon.png",
-  "GOOGL":       "images/amazon.png",
-  "META":        "images/amazon.png",
-  "TSLA":        "images/apple.png",
-  "RELIANCE":    "images/reliance.png",
-  "HDFCBANK":    "images/hdfc.png",
-  "INFY":        "images/reliance.png",
-  "TCS":         "images/hdfc.png",
-  "WIPRO":       "images/hdfc.png",
-  "ICICIBANK":   "images/hdfc.png",
-  "SBIN":        "images/hdfc.png",
-  "BAJFINANCE":  "images/hdfc.png",
-  "ASIANPAINT":  "images/reliance.png",
-  "HINDUNILVR":  "images/reliance.png",
-  "KOTAKBANK":   "images/hdfc.png",
-  "LT":          "images/reliance.png",
-  "SUNPHARMA":   "images/reliance.png",
-  // Legacy names (fallback)
-  "Apple":       "images/apple.png",
-  "Microsoft":   "images/microsoft.jpeg",
-  "NVIDIA":      "images/NVIDIA.png",
-  "Amazon":      "images/amazon.png",
-  "Reliance":    "images/reliance.png",
-  "HDFC":        "images/hdfc.png"
+const companyColors = {
+  "AAPL":        "#555555",
+  "MSFT":        "#00a4ef",
+  "NVDA":        "#76b900",
+  "AMZN":        "#ff9900",
+  "GOOGL":       "#4285f4",
+  "META":        "#1877f2",
+  "TSLA":        "#cc0000",
+  "RELIANCE":    "#0056a5",
+  "HDFCBANK":    "#004c8f",
+  "INFY":        "#007cc3",
+  "TCS":         "#2b2d42",
+  "WIPRO":       "#44c767",
+  "ICICIBANK":   "#f37021",
+  "SBIN":        "#22409a",
+  "BAJFINANCE":  "#003d6a",
+  "ASIANPAINT":  "#ed1c24",
+  "HINDUNILVR":  "#1f36c7",
+  "KOTAKBANK":   "#ed1c24",
+  "LT":          "#003f72",
+  "SUNPHARMA":   "#f7941d"
+};
+
+// Short display names for avatars (max 3 chars)
+const companyInitials = {
+  "AAPL":        "APL",
+  "MSFT":        "MS",
+  "NVDA":        "NV",
+  "AMZN":        "AMZ",
+  "GOOGL":       "G",
+  "META":        "M",
+  "TSLA":        "TS",
+  "RELIANCE":    "RIL",
+  "HDFCBANK":    "HDB",
+  "INFY":        "INF",
+  "TCS":         "TCS",
+  "WIPRO":       "WIP",
+  "ICICIBANK":   "ICI",
+  "SBIN":        "SBI",
+  "BAJFINANCE":  "BAJ",
+  "ASIANPAINT":  "AP",
+  "HINDUNILVR":  "HUL",
+  "KOTAKBANK":   "KTK",
+  "LT":          "LT",
+  "SUNPHARMA":   "SUN"
 };
 
 // ---------------------------------------------------------------
@@ -669,14 +686,14 @@ function renderMarketCards(marketData) {
     const change       = (m.changePercent || m.change || 0).toFixed(2);
     const dailyChange  = (m.dailyChangePercent || 0).toFixed(2);
     const isPositive   = parseFloat(change) >= 0;
-    const logo         = companyLogos[symbol] || companyLogos[name] || "";
+    const avatarColor = companyColors[symbol] || '#666666';
+    const avatarInitials = companyInitials[symbol] || symbol.substring(0, 2);
 
     html += `
       <div class="service-item market-card">
         <div class="market-left">
-          <div class="service-item-icon-box market-logo-box">
-            <img src="${logo}" class="company-logo"
-                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+          <div class="stock-avatar" style="background:${avatarColor};">
+            ${avatarInitials}
           </div>
           <div>
             <h3>${name}</h3>

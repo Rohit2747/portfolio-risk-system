@@ -543,6 +543,27 @@ border-radius:12px;
 margin-right:12px;
 }
 
+/* ================================================================
+   STOCK AVATAR — Letter-based colored circles
+   ================================================================ */
+
+.stock-avatar{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:700;
+  color:white;
+  letter-spacing:0.3px;
+  flex-shrink:0;
+  text-transform:uppercase;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  margin-right:12px;
+}
+
 .purple-icon{
 background:rgba(140,82,255,0.1);
 color:#b388ff;
@@ -1954,4 +1975,8 @@ body.light-mode .export-pdf-btn{
 body.light-mode .export-pdf-btn:hover{
   background:rgba(200,50,50,0.08);
   border-color:rgba(200,50,50,0.35);
+}
+
+body.light-mode .stock-avatar{
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
