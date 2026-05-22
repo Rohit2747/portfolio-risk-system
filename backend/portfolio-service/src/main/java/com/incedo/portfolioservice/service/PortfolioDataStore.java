@@ -193,22 +193,27 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     // AGGRESSIVE PORTFOLIO → Expected: HIGH risk
     //
-    // Concentrated in just 5-6 volatile stocks.
-    // NVDA and TSLA intentionally exceed 20% concentration threshold.
+    // Shows ALL breach types: CONCENTRATION_RISK + ALLOCATION_DRIFT + DAILY_DROP (when market dips)
     //
-    // Target portfolio value: ~₹2,00,000
+    // Strategy: Use STABLE expensive stocks (TCS=₹3912, BAJFINANCE=₹7285)
+    // for concentration — they don't drop 40% like NVDA/TSLA do.
+    // This guarantees concentration breach even after price movement.
+    //
+    // Target portfolio value: ~₹80,000
     // ---------------------------------------------------------------
     private List<Holding> buildAggressiveHoldings(int clientId) {
         int v = clientId % 5;
-        // NVDA at ₹875 × 60+ shares = ₹52,500+ which is >25% of ~₹2,00,000
-        // TSLA at ₹172 × 300+ shares = ₹51,720+ which is >25% of ~₹2,00,000
+        // TCS @ ₹3912 × 8 = ₹31,296 out of ~₹80,000 = ~39% (CONCENTRATION BREACH >20%)
+        // BAJFINANCE @ ₹7285 × 3 = ₹21,856 out of ~₹80,000 = ~27% (CONCENTRATION BREACH >20%)
+        // Both are stable Indian stocks — won't crash 40% like NVDA
+        // Also set targets far from actual for ALLOCATION_DRIFT breaches
         return Arrays.asList(
-            new Holding("NVDA",   "NVIDIA Corp.",    60 + v*5, 15.0),   // ~₹52,500 = ~26% (BREACH >20%)
-            new Holding("TSLA",   "Tesla Inc.",     300 + v*10, 15.0),  // ~₹51,720 = ~26% (BREACH >20%)
-            new Holding("META",   "Meta Platforms",  30 + v*3, 20.0),   // ~₹15,174 = ~8%
-            new Holding("AMZN",   "Amazon.com Inc.",100 + v*5, 20.0),   // ~₹18,230 = ~9%
-            new Holding("GOOGL",  "Alphabet Inc.",   80 + v*5, 15.0),   // ~₹14,048 = ~7%
-            new Holding("AAPL",   "Apple Inc.",     150 + v*5, 15.0)    // ~₹28,125 = ~14%
+            new Holding("TCS",       "TCS Ltd.",             8 + v,  10.0),   // actual ~39%, target 10% → CONCENTRATION + DRIFT
+            new Holding("BAJFINANCE","Bajaj Finance",        3 + v,  10.0),   // actual ~27%, target 10% → CONCENTRATION + DRIFT
+            new Holding("NVDA",      "NVIDIA Corp.",         6 + v,  20.0),   // actual ~8%, target 20% → DRIFT BREACH
+            new Holding("META",      "Meta Platforms",       5 + v,  20.0),   // actual ~4%, target 20% → DRIFT BREACH
+            new Holding("AAPL",      "Apple Inc.",          20 + v,  20.0),   // actual ~5%, target 20% → DRIFT BREACH
+            new Holding("GOOGL",     "Alphabet Inc.",       25 + v,  20.0)    // actual ~6%, target 20% → DRIFT BREACH
         );
     }
 }
