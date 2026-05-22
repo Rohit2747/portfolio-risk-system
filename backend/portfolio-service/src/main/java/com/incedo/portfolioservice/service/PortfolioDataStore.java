@@ -157,29 +157,36 @@ public class PortfolioDataStore {
     }
 
     // ---------------------------------------------------------------
-    // GROWTH PORTFOLIO → Expected: MEDIUM risk
+    // GROWTH PORTFOLIO → Expected: MEDIUM risk (ALLOCATION_DRIFT)
     //
-    // Tech-heavy with volatile stocks (NVDA, TSLA, META).
-    // Quantities intentionally cause allocation drift > 5% for some stocks
-    // but NO single stock exceeds 20% concentration.
+    // Strategy: Set TARGETS that intentionally DON'T match the actual
+    // value distribution. This guarantees drift > 5% for several stocks.
     //
-    // Target portfolio value: ~₹1,20,000
+    // Key insight: drift = |actual% - target%|
+    // If actual is 18% but target is 8%, drift = 10% → BREACH!
+    //
+    // But NO single stock exceeds 20% → no CONCENTRATION_RISK
+    // This gives MEDIUM (drift only) not HIGH.
+    //
+    // Portfolio value: ~₹1,00,000
     // ---------------------------------------------------------------
     private List<Holding> buildGrowthHoldings(int clientId) {
         int v = clientId % 5;
-        // NVDA is expensive (₹875) — give it enough shares to drift above target
-        // but not enough to breach 20% concentration
+        // TCS @ ₹3912 × 5 shares = ₹19,560 = ~19% actual BUT target is 8% → drift 11%!
+        // BAJFINANCE @ ₹7285 × 2 shares = ₹14,570 = ~14% actual BUT target is 6% → drift 8%!
+        // AAPL @ ₹187 × 10 shares = ₹1,875 = ~2% actual BUT target is 12% → drift 10%!
+        // This creates guaranteed ALLOCATION_DRIFT breaches without CONCENTRATION breach
         return Arrays.asList(
-            new Holding("NVDA",      "NVIDIA Corp.",         18 + v, 10.0),   // ~₹15,757 = ~13% (drift 3% from 10%)
-            new Holding("MSFT",      "Microsoft Corp.",      30 + v, 10.0),   // ~₹12,456 = ~10%
-            new Holding("AAPL",      "Apple Inc.",           55 + v, 10.0),   // ~₹10,312 = ~9%
-            new Holding("META",      "Meta Platforms",       22 + v,  8.0),   // ~₹11,127 = ~9% (drift ~1%)
-            new Holding("AMZN",      "Amazon.com Inc.",      45 + v, 10.0),   // ~₹8,203  = ~7% (drift 3%)
-            new Holding("TSLA",      "Tesla Inc.",           55 + v,  6.0),   // ~₹9,482  = ~8% (drift 2%)
-            new Holding("GOOGL",     "Alphabet Inc.",        40 + v,  9.0),   // ~₹7,024  = ~6% (drift 3%)
-            new Holding("TCS",       "TCS Ltd.",             4 + v,  12.0),   // ~₹15,648 = ~13% (drift 1%)
-            new Holding("BAJFINANCE","Bajaj Finance",        2 + v,  10.0),   // ~₹14,570 = ~12% (drift 2%)
-            new Holding("RELIANCE",  "Reliance Industries",  5 + v,  15.0)    // ~₹14,927 = ~12% (drift 3%)
+            new Holding("TCS",       "TCS Ltd.",             5 + v,   8.0),   // actual ~19%, target 8% → drift 11% BREACH
+            new Holding("BAJFINANCE","Bajaj Finance",        2 + v,   6.0),   // actual ~14%, target 6% → drift 8% BREACH
+            new Holding("NVDA",      "NVIDIA Corp.",         12 + v,  7.0),   // actual ~13%, target 7% → drift 6% BREACH
+            new Holding("HDFCBANK",  "HDFC Bank",            7 + v,  12.0),   // actual ~12%, target 12% → OK
+            new Holding("RELIANCE",  "Reliance Industries",  3 + v,  12.0),   // actual ~9%, target 12% → drift 3% OK
+            new Holding("MSFT",      "Microsoft Corp.",      12 + v, 15.0),   // actual ~5%, target 15% → drift 10% BREACH
+            new Holding("AAPL",      "Apple Inc.",           10 + v, 15.0),   // actual ~2%, target 15% → drift 13% BREACH
+            new Holding("META",      "Meta Platforms",       8 + v,  10.0),   // actual ~4%, target 10% → drift 6% BREACH
+            new Holding("ICICIBANK", "ICICI Bank",           8 + v,   8.0),   // actual ~9%, target 8% → OK
+            new Holding("SBIN",      "State Bank of India",  10 + v,  7.0)    // actual ~8%, target 7% → OK
         );
     }
 
