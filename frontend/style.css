@@ -105,50 +105,6 @@ align-items:center;
 gap:24px;
 }
 
-/* Header Center — Live KPIs */
-.header-center{
-display:flex;
-align-items:center;
-gap:24px;
-}
-
-.header-kpi{
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:3px;
-}
-
-.kpi-value{
-font-size:18px;
-font-weight:700;
-color:#ffffff;
-letter-spacing:-0.3px;
-}
-
-.kpi-value.kpi-cyan{
-color:#00e5ff;
-}
-
-.kpi-value.kpi-green{
-color:#00ff64;
-font-size:15px;
-}
-
-.kpi-label{
-font-size:10px;
-font-weight:500;
-color:rgba(255,255,255,0.35);
-text-transform:uppercase;
-letter-spacing:1px;
-}
-
-.header-divider{
-width:1px;
-height:32px;
-background:linear-gradient(to bottom, transparent, rgba(255,255,255,0.12), transparent);
-}
-
 .header-badge{
 display:flex;
 align-items:center;
@@ -226,9 +182,6 @@ gap:18px;
 }
 .header-right{
 flex-wrap:wrap;
-}
-.header-center{
-display:none;
 }
 .header-glass{
 padding:22px 24px;
