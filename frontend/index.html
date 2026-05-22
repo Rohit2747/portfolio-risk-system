@@ -14,6 +14,8 @@
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 </head>
 
 <body>
@@ -132,6 +134,22 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 
 </div>
 
+</div>
+
+<!-- CHART ROW -->
+<div class="chart-row">
+  <div class="chart-card">
+    <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Portfolio Risk Distribution</h3>
+    <div class="chart-canvas-wrapper">
+      <canvas id="riskDonutChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Market Index (Live)</h3>
+    <div class="chart-canvas-wrapper chart-canvas-wide">
+      <canvas id="marketLineChart"></canvas>
+    </div>
+  </div>
 </div>
 
 <!-- DASHBOARD GRID -->
@@ -272,6 +290,14 @@ AI Recommendation Engine Initializing...
   <div class="breach-indicator-row" id="daily-drop">
     <i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i>
     <span>Daily Drop: Monitoring...</span>
+  </div>
+</div>
+
+<!-- BREACH BAR CHART -->
+<div class="chart-card-inline">
+  <h3 class="chart-title"><i class="fa-solid fa-chart-bar"></i> Breach Analysis</h3>
+  <div class="chart-canvas-wrapper chart-canvas-short">
+    <canvas id="breachBarChart"></canvas>
   </div>
 </div>
 

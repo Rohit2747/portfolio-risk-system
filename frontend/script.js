@@ -53,6 +53,13 @@ let allMarketData  = [];   // market prices from /market-data
 let selectedClient = null; // currently selected portfolio card
 let aiReportPinned = false; // true when AI report is displayed, prevents polling overwrite
 
+// Chart.js instances and data
+let marketHistory = [];
+let marketLabels = [];
+let riskDonutChart = null;
+let marketLineChart = null;
+let breachBarChart = null;
+
 // ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
 // ---------------------------------------------------------------
@@ -130,6 +137,7 @@ async function loadMarketData() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     allMarketData = await response.json();
     renderMarketCards(allMarketData);
+    updateMarketLineChart(allMarketData);
   } catch (err) {
     document.getElementById("market-data").innerHTML =
       `<p style="color:red">⚠ Market Data Service unavailable. Start service on port 8081.<br><small>${err.message}</small></p>`;
@@ -202,7 +210,6 @@ async function loadRiskAnalysis() {
 // ---------------------------------------------------------------
 function updateDashboardSummary(riskData) {
   if (!riskData || riskData.length === 0) return;
-  if (aiReportPinned) return;
 
   const total        = riskData.length;
   const highCount    = riskData.filter(r => r.riskLevel === "HIGH").length;
@@ -224,6 +231,12 @@ function updateDashboardSummary(riskData) {
       });
     }
   });
+
+  // Update charts (always, even when AI report is pinned)
+  updateRiskDonutChart(riskData);
+  updateBreachBarChart(driftCount, concCount, dropCount);
+
+  if (aiReportPinned) return;
 
   // ---- Health Status ----
   const healthStatus = document.getElementById("health-status");
@@ -697,6 +710,163 @@ function buildLocalInsight(riskData) {
 }
 
 // ---------------------------------------------------------------
+// CHARTS: Initialize all Chart.js charts
+// ---------------------------------------------------------------
+function initCharts() {
+  // Donut Chart - Risk Distribution
+  const donutCtx = document.getElementById('riskDonutChart');
+  if (donutCtx) {
+    riskDonutChart = new Chart(donutCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['LOW Risk', 'MEDIUM Risk', 'HIGH Risk'],
+        datasets: [{
+          data: [50, 25, 25],
+          backgroundColor: ['rgba(0,255,100,0.7)', 'rgba(255,170,0,0.7)', 'rgba(255,94,94,0.7)'],
+          borderColor: ['rgba(0,255,100,0.3)', 'rgba(255,170,0,0.3)', 'rgba(255,94,94,0.3)'],
+          borderWidth: 2,
+          hoverBorderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: 'rgba(255,255,255,0.7)',
+              font: { size: 12, weight: '500' },
+              padding: 16,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Line Chart - Market Index
+  const lineCtx = document.getElementById('marketLineChart');
+  if (lineCtx) {
+    marketLineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Market Index',
+          data: [],
+          borderColor: '#00e5ff',
+          backgroundColor: 'rgba(0,229,255,0.05)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: '#00e5ff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 8 }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  // Bar Chart - Breach Counts
+  const barCtx = document.getElementById('breachBarChart');
+  if (barCtx) {
+    breachBarChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Allocation Drift', 'Concentration Risk', 'Daily Drop'],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: ['rgba(255,170,0,0.6)', 'rgba(255,94,94,0.6)', 'rgba(180,30,30,0.6)'],
+          borderColor: ['rgba(255,170,0,0.8)', 'rgba(255,94,94,0.8)', 'rgba(180,30,30,0.8)'],
+          borderWidth: 1,
+          borderRadius: 4,
+          barThickness: 22
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 11 }, stepSize: 5 },
+            beginAtZero: true
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 12, weight: '500' } }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+}
+
+// ---------------------------------------------------------------
+// CHARTS: Update functions called during data refresh
+// ---------------------------------------------------------------
+function updateRiskDonutChart(riskData) {
+  if (!riskDonutChart || !riskData) return;
+  const high = riskData.filter(r => r.riskLevel === "HIGH").length;
+  const medium = riskData.filter(r => r.riskLevel === "MEDIUM").length;
+  const low = riskData.filter(r => r.riskLevel === "LOW").length;
+  riskDonutChart.data.datasets[0].data = [low, medium, high];
+  riskDonutChart.update('none');
+}
+
+function updateMarketLineChart(marketData) {
+  if (!marketLineChart || !marketData || marketData.length === 0) return;
+  const avgPrice = marketData.reduce((sum, s) => sum + (s.currentPrice || s.price || 0), 0) / marketData.length;
+  const now = new Date();
+  const timeLabel = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+
+  marketHistory.push(avgPrice);
+  marketLabels.push(timeLabel);
+
+  // Keep max 60 data points (5 minutes at 5-second intervals)
+  if (marketHistory.length > 60) {
+    marketHistory.shift();
+    marketLabels.shift();
+  }
+
+  marketLineChart.data.labels = marketLabels;
+  marketLineChart.data.datasets[0].data = marketHistory;
+  marketLineChart.update('none');
+}
+
+function updateBreachBarChart(driftCount, concCount, dropCount) {
+  if (!breachBarChart) return;
+  breachBarChart.data.datasets[0].data = [driftCount, concCount, dropCount];
+  breachBarChart.update('none');
+}
+
+// ---------------------------------------------------------------
 // AUTO-REFRESH TIMERS
 // ---------------------------------------------------------------
 
@@ -751,6 +921,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // INITIAL LOAD — load all data on page start
+  initCharts();
   loadPortfolioData();
   loadMarketData();
   loadRiskAnalysis();
