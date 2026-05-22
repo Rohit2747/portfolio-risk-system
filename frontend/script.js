@@ -145,6 +145,69 @@ function dismissToast(closeBtn) {
 }
 
 // ---------------------------------------------------------------
+// THEME: Dark/Light Mode Toggle
+// ---------------------------------------------------------------
+function toggleTheme() {
+  const body = document.body;
+  const icon = document.getElementById('theme-icon');
+  
+  body.classList.toggle('light-mode');
+  
+  const isLight = body.classList.contains('light-mode');
+  
+  // Update icon
+  if (icon) {
+    icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+  }
+  
+  // Persist preference
+  localStorage.setItem('dashboard-theme', isLight ? 'light' : 'dark');
+  
+  // Update Chart.js chart colors for the new theme
+  updateChartsTheme(isLight);
+}
+
+function updateChartsTheme(isLight) {
+  const textColor = isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.4)';
+  const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.03)';
+  const legendColor = isLight ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+  
+  // Update market line chart
+  if (marketLineChart) {
+    marketLineChart.options.scales.x.ticks.color = textColor;
+    marketLineChart.options.scales.y.ticks.color = textColor;
+    marketLineChart.options.scales.x.grid.color = gridColor;
+    marketLineChart.options.scales.y.grid.color = gridColor;
+    marketLineChart.update('none');
+  }
+  
+  // Update breach bar chart
+  if (breachBarChart) {
+    breachBarChart.options.scales.x.ticks.color = textColor;
+    breachBarChart.options.scales.y.ticks.color = isLight ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.6)';
+    breachBarChart.options.scales.x.grid.color = gridColor;
+    breachBarChart.update('none');
+  }
+  
+  // Update donut chart legend
+  if (riskDonutChart) {
+    riskDonutChart.options.plugins.legend.labels.color = legendColor;
+    riskDonutChart.update('none');
+  }
+}
+
+function loadSavedTheme() {
+  const saved = localStorage.getItem('dashboard-theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.className = 'fa-solid fa-moon';
+    // Defer chart theme update until charts are initialized
+    setTimeout(() => updateChartsTheme(true), 1000);
+  }
+}
+
+// ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
 // ---------------------------------------------------------------
 function updateHealthScoreWidget(score) {
@@ -1095,6 +1158,7 @@ setInterval(() => {
 // ALERT PANEL TOGGLE
 // ---------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
+  loadSavedTheme();
   const alertToggle = document.getElementById("alert-toggle");
   const alertList   = document.getElementById("alert-list");
 
