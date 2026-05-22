@@ -16,6 +16,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 </head>
 
 <body>
@@ -244,7 +246,12 @@ Click a client portfolio to generate AI-powered risk analysis.
 
 <div class="ai-summary-card">
 
-<h2>AI Insight Summary</h2>
+<div class="ai-summary-header">
+  <h2>AI Insight Summary</h2>
+  <button class="export-pdf-btn" id="export-pdf-btn" onclick="exportAIReportPDF()">
+    <i class="fa-solid fa-file-pdf"></i> Export PDF
+  </button>
+</div>
 
 <p id="ai-summary">
 AI is analyzing portfolio health...

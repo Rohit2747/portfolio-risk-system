@@ -1604,6 +1604,48 @@ transition:border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* ================================================================
+   AI SUMMARY HEADER WITH EXPORT BUTTON
+   ================================================================ */
+
+.ai-summary-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.ai-summary-header h2{
+  margin-bottom:0;
+}
+
+.export-pdf-btn{
+  padding:8px 16px;
+  border-radius:8px;
+  border:1px solid rgba(255,94,94,0.25);
+  background:rgba(255,94,94,0.06);
+  color:#ff7b7b;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:all 0.3s;
+  letter-spacing:0.3px;
+}
+
+.export-pdf-btn:hover{
+  background:rgba(255,94,94,0.12);
+  border-color:rgba(255,94,94,0.4);
+  box-shadow:0 0 12px rgba(255,94,94,0.1);
+}
+
+.export-pdf-btn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+/* ================================================================
    LIGHT MODE OVERRIDES
    ================================================================ */
 
@@ -1901,4 +1943,15 @@ body.light-mode .comparison-instructions{
 body.light-mode .compare-mode-btn{
   border-color:rgba(140,82,255,0.25);
   background:rgba(140,82,255,0.04);
+}
+
+body.light-mode .export-pdf-btn{
+  border-color:rgba(200,50,50,0.2);
+  background:rgba(200,50,50,0.04);
+  color:#cc4444;
+}
+
+body.light-mode .export-pdf-btn:hover{
+  background:rgba(200,50,50,0.08);
+  border-color:rgba(200,50,50,0.35);
 }

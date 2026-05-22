@@ -372,6 +372,124 @@ function calculateClientHealth(client) {
 }
 
 // ---------------------------------------------------------------
+// EXPORT: AI Report as PDF
+// ---------------------------------------------------------------
+async function exportAIReportPDF() {
+  if (!selectedClient) {
+    showToast('Export Failed', 'Please select a client and generate an AI report first.', 'warning');
+    return;
+  }
+  
+  const btn = document.getElementById('export-pdf-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+  }
+  
+  // Get current data
+  const client = allRiskData.find(r => r.clientId === selectedClient);
+  const clientName = client ? client.clientName : `Client ${selectedClient}`;
+  const riskLevel = client ? client.riskLevel : 'UNKNOWN';
+  const portfolioValue = client ? (client.totalPortfolioValue || 0).toLocaleString('en-IN', {maximumFractionDigits: 2}) : 'N/A';
+  const dailyChange = client ? (client.dailyChangePercent || 0).toFixed(2) : '0.00';
+  const healthScore = document.getElementById('health-score') ? document.getElementById('health-score').textContent : 'N/A';
+  const aiSummary = document.getElementById('ai-summary') ? document.getElementById('ai-summary').textContent : 'No analysis available.';
+  const aiRecommendation = document.getElementById('ai-recommendation') ? document.getElementById('ai-recommendation').textContent : 'No recommendation.';
+  const healthStatus = document.getElementById('health-status') ? document.getElementById('health-status').textContent : 'N/A';
+  
+  // Build breach list
+  let breachesText = 'No active breaches.';
+  if (client && client.breaches && client.breaches.length > 0) {
+    breachesText = client.breaches.map(b => `\u2022 ${b.breachType}: ${b.description || 'Threshold exceeded'}`).join('\n');
+  }
+  
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US');
+  
+  // Create PDF content element
+  const pdfContent = document.createElement('div');
+  pdfContent.style.cssText = 'padding:40px;font-family:Segoe UI,sans-serif;color:#1a1a2e;background:white;width:700px;';
+  
+  const riskColor = riskLevel === 'HIGH' ? '#cc3333' : riskLevel === 'MEDIUM' ? '#cc7700' : '#008844';
+  
+  pdfContent.innerHTML = `
+    <div style="text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #0088aa;">
+      <h1 style="font-size:22px;color:#0088aa;margin:0 0 6px 0;">Portfolio Risk Intelligence</h1>
+      <p style="font-size:12px;color:#666;margin:0;">AI-Powered Risk Assessment Report</p>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <h2 style="font-size:18px;margin:0 0 4px 0;color:#1a1a2e;">${clientName}</h2>
+        <p style="font-size:12px;color:#666;margin:0;">Generated: ${dateStr} at ${timeStr}</p>
+      </div>
+      <div style="text-align:right;">
+        <div style="display:inline-block;padding:6px 16px;border-radius:16px;background:${riskColor}22;color:${riskColor};font-size:14px;font-weight:700;border:1px solid ${riskColor}44;">
+          ${riskLevel} RISK
+        </div>
+      </div>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+      <div style="padding:14px;background:#f8f9fa;border-radius:8px;text-align:center;">
+        <p style="font-size:11px;color:#666;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">Portfolio Value</p>
+        <p style="font-size:18px;font-weight:700;color:#1a1a2e;margin:0;">\u20B9${portfolioValue}</p>
+      </div>
+      <div style="padding:14px;background:#f8f9fa;border-radius:8px;text-align:center;">
+        <p style="font-size:11px;color:#666;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">Daily Change</p>
+        <p style="font-size:18px;font-weight:700;color:${parseFloat(dailyChange) >= 0 ? '#008844' : '#cc3333'};margin:0;">${parseFloat(dailyChange) >= 0 ? '+' : ''}${dailyChange}%</p>
+      </div>
+      <div style="padding:14px;background:#f8f9fa;border-radius:8px;text-align:center;">
+        <p style="font-size:11px;color:#666;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">Health Score</p>
+        <p style="font-size:18px;font-weight:700;color:#0088aa;margin:0;">${healthScore}</p>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:20px;padding:16px;background:#f0f8ff;border-radius:8px;border-left:4px solid #0088aa;">
+      <h3 style="font-size:13px;color:#0088aa;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">AI Analysis</h3>
+      <p style="font-size:13px;color:#333;line-height:1.7;margin:0;">${aiSummary}</p>
+    </div>
+    
+    <div style="margin-bottom:20px;padding:16px;background:#f8fff8;border-radius:8px;border-left:4px solid #008844;">
+      <h3 style="font-size:13px;color:#008844;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">AI Recommendation</h3>
+      <p style="font-size:13px;color:#333;line-height:1.7;margin:0;">${aiRecommendation}</p>
+    </div>
+    
+    <div style="margin-bottom:20px;padding:16px;background:${client && client.breaches && client.breaches.length > 0 ? '#fff5f5' : '#f8fff8'};border-radius:8px;border-left:4px solid ${client && client.breaches && client.breaches.length > 0 ? '#cc3333' : '#008844'};">
+      <h3 style="font-size:13px;color:${client && client.breaches && client.breaches.length > 0 ? '#cc3333' : '#008844'};margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Risk Breaches</h3>
+      <pre style="font-size:12px;color:#333;line-height:1.8;margin:0;white-space:pre-wrap;font-family:inherit;">${breachesText}</pre>
+    </div>
+    
+    <div style="margin-top:30px;padding-top:16px;border-top:1px solid #eee;text-align:center;">
+      <p style="font-size:10px;color:#999;margin:0;">This report was generated by Portfolio Risk Intelligence AI Engine. For informational purposes only. Not financial advice.</p>
+    </div>
+  `;
+  
+  // Generate PDF using html2pdf
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `AI_Risk_Report_${clientName.replace(/\s+/g, '_')}_${now.toISOString().split('T')[0]}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  try {
+    await html2pdf().set(opt).from(pdfContent).save();
+    showToast('PDF Exported', `Report saved for ${clientName}.`, 'success');
+  } catch (err) {
+    showToast('Export Failed', `Could not generate PDF: ${err.message}`, 'danger');
+  }
+  
+  // Reset button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Export PDF';
+  }
+}
+
+// ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
 // ---------------------------------------------------------------
 function updateHealthScoreWidget(score) {
