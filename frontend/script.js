@@ -345,9 +345,6 @@ async function fetchAndRenderRiskForClient(clientId) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const riskData = await response.json();
     renderRiskPanel(riskData);
-
-    // Also get AI insight from AI Insight Service
-    fetchAndRenderAIInsight(clientId);
   } catch (err) {
     document.getElementById("risk-data").innerHTML =
       `<p style="color:red">⚠ Could not load risk data: ${err.message}</p>`;
@@ -376,6 +373,74 @@ async function fetchAndRenderAIInsight(clientId) {
   } catch (err) {
     // AI Insight Service may not be running — silently skip
     console.log("[Dashboard] AI Insight Service not available:", err.message);
+  }
+}
+
+/**
+ * Generate AI Report — triggered by button click
+ * Shows a brief "analyzing" state, then fetches AI insight for the selected client.
+ */
+async function generateAIReport(clientId) {
+  // Disable button and show analyzing state
+  const btn = document.querySelector(".generate-ai-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Portfolio...';
+    btn.style.opacity = "0.6";
+  }
+
+  // Show loading in AI summary
+  document.getElementById("ai-summary").textContent = "AI Engine is analyzing portfolio risk conditions...";
+  document.getElementById("ai-recommendation").innerHTML =
+    '<span style="color:rgba(0,255,255,0.5);font-style:italic;">Generating contextual risk assessment...</span>';
+
+  // Brief delay to simulate AI thinking (makes it feel more real)
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  try {
+    const response = await fetch(`${AI_INSIGHT_SERVICE_URL}/ai-insight/portfolio/${clientId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const insight = await response.json();
+
+    // Update AI summary with generated insight
+    document.getElementById("ai-summary").textContent = insight.explanation || "";
+    document.getElementById("ai-recommendation").innerHTML =
+      `${insight.suggestedAction || ""}<br><br>
+       <small style="color:rgba(255,255,255,0.35);font-size:12px;">${insight.disclaimer || ""}</small>`;
+
+    // Show severity badge
+    const severityColor = insight.severity === "CRITICAL" ? "red"
+                        : insight.severity === "WARNING" ? "orange" : "lime";
+    document.getElementById("health-status").textContent =
+      `AI Severity: ${insight.severity} | Provider: ${insight.aiProvider}`;
+    document.getElementById("health-status").style.color = severityColor;
+
+    // Update button to success state
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Report Generated';
+      btn.style.opacity = "1";
+      btn.style.borderColor = "rgba(0,255,100,0.3)";
+      btn.style.color = "#00ff64";
+
+      // Reset button after 3 seconds
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-brain"></i> Generate AI Report';
+        btn.disabled = false;
+        btn.style.borderColor = "";
+        btn.style.color = "";
+      }, 3000);
+    }
+
+  } catch (err) {
+    document.getElementById("ai-summary").textContent =
+      "AI Insight Service unavailable. Please ensure the service is running on port 8083.";
+    document.getElementById("ai-recommendation").innerHTML = "";
+
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-brain"></i> Generate AI Report';
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }
   }
 }
 
@@ -428,8 +493,11 @@ function renderRiskPanel(riskData) {
         <h4 style="color:cyan;margin-bottom:8px;">Risk Breach Details:</h4>
         ${breachesHtml}
       </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
-        <small style="color:#888;">Last analyzed: ${riskData.alertTimestamp || "N/A"}</small>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);">
+        <button class="generate-ai-btn" onclick="generateAIReport(${riskData.clientId})">
+          <i class="fa-solid fa-brain"></i> Generate AI Report
+        </button>
+        <small style="color:rgba(255,255,255,0.35);display:block;margin-top:8px;">Last analyzed: ${riskData.alertTimestamp || "N/A"}</small>
       </div>
     </div>`;
 

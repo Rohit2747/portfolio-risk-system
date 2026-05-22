@@ -986,3 +986,39 @@ to{
 opacity:1;
 }
 }
+
+
+
+/* ================================================================
+   GENERATE AI REPORT BUTTON
+   ================================================================ */
+
+.generate-ai-btn{
+background:transparent;
+border:1px solid rgba(0,255,255,0.2);
+color:#00e5ff;
+padding:10px 20px;
+border-radius:8px;
+font-size:13px;
+font-weight:600;
+letter-spacing:0.3px;
+cursor:pointer;
+transition:0.3s;
+display:inline-flex;
+align-items:center;
+gap:8px;
+}
+
+.generate-ai-btn:hover{
+background:rgba(0,255,255,0.06);
+border-color:rgba(0,255,255,0.4);
+box-shadow:0 0 12px rgba(0,255,255,0.1);
+}
+
+.generate-ai-btn:disabled{
+cursor:not-allowed;
+}
+
+.generate-ai-btn i{
+font-size:14px;
+}
