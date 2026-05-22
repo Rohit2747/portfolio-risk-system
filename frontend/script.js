@@ -61,6 +61,34 @@ let marketLineChart = null;
 let breachBarChart = null;
 
 // ---------------------------------------------------------------
+// HELPER: Animated Counter Effect
+// ---------------------------------------------------------------
+function animateCounter(element, start, end, duration, prefix = '', suffix = '', formatter = null) {
+  if (!element) return;
+  const startTime = performance.now();
+  const range = end - start;
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic for smooth deceleration
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + (range * eased);
+
+    if (formatter) {
+      element.textContent = prefix + formatter(current) + suffix;
+    } else {
+      element.textContent = prefix + Math.round(current) + suffix;
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+// ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
 // ---------------------------------------------------------------
 function updateHealthScoreWidget(score) {
@@ -138,6 +166,15 @@ async function loadMarketData() {
     allMarketData = await response.json();
     renderMarketCards(allMarketData);
     updateMarketLineChart(allMarketData);
+
+    // Animate market overview stat
+    const avgChange = allMarketData.reduce((sum, s) => sum + (s.dailyChangePercent || s.changePercent || 0), 0) / allMarketData.length;
+    const marketOverviewEl = document.querySelector(".top-card:nth-child(3) .top-card-content p");
+    if (marketOverviewEl) {
+      const isPositive = avgChange >= 0;
+      marketOverviewEl.style.color = isPositive ? "lime" : "red";
+      animateCounter(marketOverviewEl, 0, avgChange, 800, isPositive ? '+' : '', '%', (val) => val.toFixed(2));
+    }
   } catch (err) {
     document.getElementById("market-data").innerHTML =
       `<p style="color:red">⚠ Market Data Service unavailable. Start service on port 8081.<br><small>${err.message}</small></p>`;
@@ -355,13 +392,20 @@ function updateDashboardSummary(riskData) {
     document.getElementById("risk-percentage").textContent = `${riskScore}%`;
   }
 
-  // Update top stats
-  const highRiskEl = document.querySelector(".top-card:nth-child(4) p");
-  if (highRiskEl) { highRiskEl.textContent = highCount; highRiskEl.style.color = "red"; }
+  // Update top stats with animated counters
+  const highRiskEl = document.querySelector(".top-card:nth-child(4) .top-card-content p");
+  if (highRiskEl) {
+    const currentVal = parseInt(highRiskEl.textContent) || 0;
+    if (currentVal !== highCount) {
+      animateCounter(highRiskEl, currentVal, highCount, 800);
+    }
+    highRiskEl.style.color = "red";
+  }
 
-  const totalValueEl = document.querySelector(".top-card:nth-child(2) p");
+  const totalValueEl = document.querySelector(".top-card:nth-child(2) .top-card-content p");
   if (totalValueEl) {
-    totalValueEl.textContent = `₹${(totalValue/10000000).toFixed(2)}Cr`;
+    const targetCr = totalValue / 10000000;
+    animateCounter(totalValueEl, 0, targetCr, 1000, '\u20B9', 'Cr', (val) => val.toFixed(2));
   }
 }
 
@@ -926,4 +970,11 @@ window.addEventListener("DOMContentLoaded", () => {
   loadMarketData();
   loadRiskAnalysis();
   updateTimestamp();
+
+  // Animate static top stats on page load
+  setTimeout(() => {
+    // Total Clients: count from 0 to 100
+    const clientsEl = document.querySelector(".top-card:nth-child(1) .top-card-content p");
+    animateCounter(clientsEl, 0, 100, 1200);
+  }, 500);
 });
