@@ -68,14 +68,6 @@ public class PriceSimulatorService {
         initializePrices();
     }
 
-    /**
-     * Initializes all 20 stocks with their base prices at service startup.
-     * Called from constructor so initialization happens immediately.
-     */
-    public PriceSimulatorService() {
-        this(null);
-    }
-
     private void initializePrices() {
         String startTime = LocalDateTime.now().format(FORMATTER);
         for (Object[] config : EQUITY_CONFIG) {
