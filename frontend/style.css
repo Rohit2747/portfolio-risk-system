@@ -1022,3 +1022,15 @@ cursor:not-allowed;
 .generate-ai-btn i{
 font-size:14px;
 }
+
+
+
+/* ================================================================
+   AI REPORT HIGHLIGHT — brief glow when report generates
+   ================================================================ */
+
+.ai-highlight{
+border-color:rgba(0,255,255,0.4) !important;
+box-shadow:0 0 30px rgba(0,255,255,0.1), 0 2px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+transition:border-color 0.3s ease, box-shadow 0.3s ease;
+}

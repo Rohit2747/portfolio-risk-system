@@ -415,6 +415,15 @@ async function generateAIReport(clientId) {
       `AI Severity: ${insight.severity} | Provider: ${insight.aiProvider}`;
     document.getElementById("health-status").style.color = severityColor;
 
+    // Auto-scroll to AI Insight Summary section
+    const aiCard = document.querySelector(".ai-summary-card");
+    if (aiCard) {
+      aiCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Brief highlight glow to draw attention
+      aiCard.classList.add("ai-highlight");
+      setTimeout(() => aiCard.classList.remove("ai-highlight"), 2000);
+    }
+
     // Update button to success state
     if (btn) {
       btn.innerHTML = '<i class="fa-solid fa-check"></i> Report Generated';
