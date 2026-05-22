@@ -442,6 +442,26 @@ function renderRiskPanel(riskData) {
 
   // Update drift/exposure/drop indicators for this client
   updateBreachIndicators(riskData);
+
+  // Update risk meter and health score for this specific client
+  let clientHealthScore = 100;
+  if (riskData.riskLevel === "HIGH") clientHealthScore = 20;
+  else if (riskData.riskLevel === "MEDIUM") clientHealthScore = 55;
+  else clientHealthScore = 90;
+
+  // Adjust based on number of breaches
+  if (riskData.breaches) {
+    clientHealthScore -= riskData.breaches.length * 5;
+  }
+  clientHealthScore = Math.max(0, Math.min(100, clientHealthScore));
+
+  document.getElementById("health-score").textContent = `AI Health Score: ${clientHealthScore}/100`;
+
+  const clientRiskScore = 100 - clientHealthScore;
+  const fill = document.querySelector(".risk-fill");
+  fill.style.width = clientRiskScore + "%";
+  fill.style.background = clientRiskScore > 60 ? "red" : clientRiskScore > 30 ? "orange" : "lime";
+  document.getElementById("risk-percentage").textContent = `Risk Score: ${clientRiskScore}%`;
 }
 
 function updateBreachIndicators(riskData) {
