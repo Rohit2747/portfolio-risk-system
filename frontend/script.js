@@ -54,6 +54,7 @@ let selectedClient = null; // currently selected portfolio card
 
 // ---------------------------------------------------------------
 // FETCH: Portfolio Data (port 8080)
+// Enriches with value & risk level from Risk Analysis data
 // ---------------------------------------------------------------
 async function loadPortfolioData() {
   try {
@@ -70,14 +71,19 @@ async function loadPortfolioData() {
 function renderPortfolioCards(portfolios) {
   let html = "";
   portfolios.forEach(p => {
-    const riskClass  = (p.riskLevel || "UNKNOWN").toLowerCase();
-    const value      = p.portfolioValue > 0
-      ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
-      : "Loading...";
+    // Enrich portfolio card with data from Risk Analysis Service (if available)
+    const riskEntry = allRiskData.find(r => r.clientId === p.clientId);
+    const riskLevel = riskEntry ? riskEntry.riskLevel : (p.riskLevel || "UNKNOWN");
+    const portfolioValue = riskEntry ? riskEntry.totalPortfolioValue : p.portfolioValue;
+
+    const riskClass  = riskLevel.toLowerCase();
+    const value      = portfolioValue > 0
+      ? `₹${portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
+      : "Calculating...";
 
     html += `
       <div class="service-item portfolio-card"
-           onclick="selectClient(${p.clientId}, '${p.clientName}', '${p.riskLevel || "UNKNOWN"}', ${p.portfolioValue || 0}, event)">
+           onclick="selectClient(${p.clientId}, '${p.clientName}', '${riskLevel}', ${portfolioValue || 0}, event)">
         <div>
           <h3>
             <div class="service-item-icon-box purple-icon">
@@ -86,7 +92,7 @@ function renderPortfolioCards(portfolios) {
             ${p.clientName}
           </h3>
           <p>Total Value: ${value}</p>
-          <p>Risk Level: <span class="${riskClass}">${p.riskLevel || "CALCULATING..."}</span></p>
+          <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
         </div>
       </div>`;
   });
@@ -150,6 +156,9 @@ async function loadRiskAnalysis() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     allRiskData = await response.json();
     updateDashboardSummary(allRiskData);
+
+    // Re-render portfolio cards with updated values and risk levels
+    loadPortfolioData();
 
     // If a client is selected, refresh their panel too
     if (selectedClient) {
