@@ -42,6 +42,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
           <i class="fa-solid fa-sun" id="theme-icon"></i>
         </button>
+        <button class="compare-mode-btn" id="compare-mode-btn" onclick="toggleCompareMode()">
+          <i class="fa-solid fa-code-compare"></i> Compare
+        </button>
         <div class="header-badge">
           <span class="badge-dot"></span>
           <span class="badge-text">System Online</span>
@@ -337,6 +340,21 @@ AI Engine Status: ACTIVE
 
 </div>
 
+</div>
+
+<!-- CLIENT COMPARISON PANEL -->
+<div class="comparison-panel" id="comparison-panel" style="display:none;">
+  <div class="comparison-header">
+    <h2><i class="fa-solid fa-code-compare"></i> Client Comparison</h2>
+    <div class="comparison-actions">
+      <button class="comparison-close-btn" onclick="closeComparison()">
+        <i class="fa-solid fa-xmark"></i> Close
+      </button>
+    </div>
+  </div>
+  <div class="comparison-grid" id="comparison-grid">
+    <!-- Dynamically populated -->
+  </div>
 </div>
 
 </div>

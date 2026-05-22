@@ -53,6 +53,9 @@ let allMarketData  = [];   // market prices from /market-data
 let selectedClient = null; // currently selected portfolio card
 let aiReportPinned = false; // true when AI report is displayed, prevents polling overwrite
 
+let compareMode = false;
+let compareClients = []; // holds up to 2 client IDs for comparison
+
 // Chart.js instances and data
 let marketHistory = [];
 let marketLabels = [];
@@ -205,6 +208,167 @@ function loadSavedTheme() {
     // Defer chart theme update until charts are initialized
     setTimeout(() => updateChartsTheme(true), 1000);
   }
+}
+
+// ---------------------------------------------------------------
+// CLIENT COMPARISON MODE
+// ---------------------------------------------------------------
+function toggleCompareMode() {
+  compareMode = !compareMode;
+  const btn = document.getElementById('compare-mode-btn');
+  const panel = document.getElementById('comparison-panel');
+  
+  if (compareMode) {
+    btn.classList.add('active');
+    btn.innerHTML = '<i class="fa-solid fa-code-compare"></i> Compare (ON)';
+    compareClients = [];
+    panel.style.display = 'block';
+    renderComparisonPanel();
+    // Show toast
+    showToast('Compare Mode', 'Select 2 client portfolios to compare side by side.', 'warning');
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = '<i class="fa-solid fa-code-compare"></i> Compare';
+    compareClients = [];
+    panel.style.display = 'none';
+    // Remove compare highlights
+    document.querySelectorAll('.portfolio-card').forEach(card => {
+      card.style.border = '1px solid rgba(255,255,255,0.04)';
+    });
+  }
+}
+
+function closeComparison() {
+  compareMode = false;
+  const btn = document.getElementById('compare-mode-btn');
+  const panel = document.getElementById('comparison-panel');
+  btn.classList.remove('active');
+  btn.innerHTML = '<i class="fa-solid fa-code-compare"></i> Compare';
+  compareClients = [];
+  panel.style.display = 'none';
+  document.querySelectorAll('.portfolio-card').forEach(card => {
+    card.style.border = '1px solid rgba(255,255,255,0.04)';
+  });
+}
+
+function addToComparison(clientId) {
+  if (compareClients.includes(clientId)) return; // already selected
+  if (compareClients.length >= 2) {
+    compareClients = [clientId]; // reset and start fresh with this one
+  } else {
+    compareClients.push(clientId);
+  }
+  
+  // Highlight selected compare cards
+  document.querySelectorAll('.portfolio-card').forEach(card => {
+    card.style.border = '1px solid rgba(255,255,255,0.04)';
+  });
+  
+  renderComparisonPanel();
+}
+
+function renderComparisonPanel() {
+  const grid = document.getElementById('comparison-grid');
+  if (!grid) return;
+  
+  if (compareClients.length === 0) {
+    grid.innerHTML = `
+      <div class="comparison-instructions" style="grid-column:1/-1;">
+        <i class="fa-solid fa-arrow-pointer"></i>
+        Click 2 client portfolios above to compare their risk profiles.
+      </div>`;
+    return;
+  }
+  
+  if (compareClients.length === 1) {
+    const client1 = allRiskData.find(r => r.clientId === compareClients[0]);
+    grid.innerHTML = `
+      <div class="comparison-client">
+        ${renderComparisonClient(client1)}
+      </div>
+      <div class="comparison-vs">VS</div>
+      <div class="comparison-instructions" style="display:flex;align-items:center;justify-content:center;min-height:200px;">
+        <span style="color:rgba(255,255,255,0.35);font-size:13px;">Select 2nd client...</span>
+      </div>`;
+    return;
+  }
+  
+  // Both clients selected
+  const client1 = allRiskData.find(r => r.clientId === compareClients[0]);
+  const client2 = allRiskData.find(r => r.clientId === compareClients[1]);
+  
+  if (!client1 || !client2) return;
+  
+  grid.innerHTML = `
+    <div class="comparison-client">
+      ${renderComparisonClient(client1)}
+    </div>
+    <div class="comparison-vs">VS</div>
+    <div class="comparison-client">
+      ${renderComparisonClient(client2)}
+    </div>`;
+    
+  // Scroll to comparison panel
+  const panel = document.getElementById('comparison-panel');
+  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderComparisonClient(client) {
+  if (!client) return '<p>Client data not available</p>';
+  
+  const riskColor = client.riskLevel === 'HIGH' ? '#ff5e5e' 
+                  : client.riskLevel === 'MEDIUM' ? 'orange' : '#00ff64';
+  const value = (client.totalPortfolioValue || 0).toLocaleString('en-IN', {maximumFractionDigits: 2});
+  const daily = (client.dailyChangePercent || 0).toFixed(2);
+  const dailyColor = parseFloat(daily) >= 0 ? '#00ff64' : '#ff5e5e';
+  const breachCount = client.breaches ? client.breaches.length : 0;
+  
+  let breachesHtml = '';
+  if (client.breaches && client.breaches.length > 0) {
+    client.breaches.forEach(b => {
+      breachesHtml += `<div class="comparison-breach-item">${b.breachType}: ${b.description || 'Threshold exceeded'}</div>`;
+    });
+  } else {
+    breachesHtml = '<div class="comparison-no-breach">No active breaches</div>';
+  }
+  
+  return `
+    <h3 style="color:${riskColor}">
+      <i class="fa-solid fa-user-shield"></i>
+      ${client.clientName}
+    </h3>
+    <div class="comparison-metric">
+      <span class="comparison-metric-label">Risk Level</span>
+      <span class="comparison-metric-value" style="color:${riskColor}">${client.riskLevel}</span>
+    </div>
+    <div class="comparison-metric">
+      <span class="comparison-metric-label">Portfolio Value</span>
+      <span class="comparison-metric-value">\u20B9${value}</span>
+    </div>
+    <div class="comparison-metric">
+      <span class="comparison-metric-label">Daily Change</span>
+      <span class="comparison-metric-value" style="color:${dailyColor}">${parseFloat(daily) >= 0 ? '+' : ''}${daily}%</span>
+    </div>
+    <div class="comparison-metric">
+      <span class="comparison-metric-label">Active Breaches</span>
+      <span class="comparison-metric-value" style="color:${breachCount > 0 ? '#ff5e5e' : '#00ff64'}">${breachCount}</span>
+    </div>
+    <div class="comparison-metric">
+      <span class="comparison-metric-label">Health Score</span>
+      <span class="comparison-metric-value">${calculateClientHealth(client)} / 100</span>
+    </div>
+    <div class="comparison-breaches">
+      ${breachesHtml}
+    </div>`;
+}
+
+function calculateClientHealth(client) {
+  let score = 100;
+  if (client.riskLevel === 'HIGH') score = 20;
+  else if (client.riskLevel === 'MEDIUM') score = 55;
+  else score = 90;
+  if (client.breaches) score -= client.breaches.length * 5;
+  return Math.max(0, Math.min(100, score));
 }
 
 // ---------------------------------------------------------------
@@ -618,6 +782,16 @@ function updateDashboardSummary(riskData) {
 // ---------------------------------------------------------------
 function selectClient(clientId, clientName, riskLevel, portfolioValue, event) {
   aiReportPinned = false;
+
+  // If compare mode is active, add to comparison instead of normal selection
+  if (compareMode) {
+    addToComparison(clientId);
+    // Highlight the selected cards for comparison
+    if (event && event.currentTarget) {
+      event.currentTarget.style.border = '2px solid #b388ff';
+    }
+    return;
+  }
 
   // Highlight selected card
   document.querySelectorAll(".portfolio-card").forEach(card => {
