@@ -241,6 +241,23 @@ function toggleCompareMode() {
     compareClients = [];
     panel.style.display = 'block';
     renderComparisonPanel();
+    // Update risk panel to show compare mode message
+    document.getElementById("risk-data").innerHTML = `
+      <div class="service-item risk-card">
+        <h3 style="color:#b388ff;">
+          <div class="service-item-icon-box" style="background:rgba(140,82,255,0.1);color:#b388ff;">
+            <i class="fa-solid fa-code-compare"></i>
+          </div>
+          Compare Mode Active
+        </h3>
+        <p style="color:rgba(255,255,255,0.6);margin-top:8px;">
+          Select 2 client portfolios to compare side by side.
+        </p>
+        <p style="color:rgba(255,255,255,0.35);margin-top:6px;font-size:12px;">
+          Exit Compare Mode to view individual risk analysis.
+        </p>
+      </div>`;
+    selectedClient = null;
     // Show toast
     showToast('Compare Mode', 'Select 2 client portfolios to compare side by side.', 'warning');
   } else {
@@ -252,6 +269,20 @@ function toggleCompareMode() {
     document.querySelectorAll('.portfolio-card').forEach(card => {
       card.style.border = '1px solid rgba(255,255,255,0.04)';
     });
+    // Reset risk panel to default
+    document.getElementById("risk-data").innerHTML = `
+      <div class="service-item risk-card">
+        <h3 style="color:cyan;">
+          <div class="service-item-icon-box purple-icon">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          Select a Client
+        </h3>
+        <p>
+          Click a client portfolio to generate AI-powered risk analysis.
+        </p>
+      </div>`;
+    selectedClient = null;
   }
 }
 
@@ -266,6 +297,19 @@ function closeComparison() {
   document.querySelectorAll('.portfolio-card').forEach(card => {
     card.style.border = '1px solid rgba(255,255,255,0.04)';
   });
+  // Reset risk panel to default
+  document.getElementById("risk-data").innerHTML = `
+    <div class="service-item risk-card">
+      <h3 style="color:cyan;">
+        <div class="service-item-icon-box purple-icon">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        Select a Client
+      </h3>
+      <p>
+        Click a client portfolio to generate AI-powered risk analysis.
+      </p>
+    </div>`;
 }
 
 function addToComparison(clientId) {
@@ -282,6 +326,33 @@ function addToComparison(clientId) {
   });
   
   renderComparisonPanel();
+
+  // Update risk panel with current comparison status
+  const client1 = compareClients[0] ? allRiskData.find(r => r.clientId === compareClients[0]) : null;
+  const client2 = compareClients[1] ? allRiskData.find(r => r.clientId === compareClients[1]) : null;
+  const name1 = client1 ? client1.clientName : '...';
+  const name2 = client2 ? client2.clientName : '...';
+
+  let statusMsg = '';
+  if (compareClients.length === 1) {
+    statusMsg = `<p style="color:rgba(255,255,255,0.6);margin-top:8px;">Comparing: <span style="color:#b388ff;font-weight:600;">${name1}</span> vs <span style="color:rgba(255,255,255,0.35);">Select 2nd client...</span></p>`;
+  } else if (compareClients.length === 2) {
+    statusMsg = `<p style="color:rgba(255,255,255,0.6);margin-top:8px;">Comparing: <span style="color:#b388ff;font-weight:600;">${name1}</span> vs <span style="color:#b388ff;font-weight:600;">${name2}</span></p>`;
+  }
+
+  document.getElementById("risk-data").innerHTML = `
+    <div class="service-item risk-card">
+      <h3 style="color:#b388ff;">
+        <div class="service-item-icon-box" style="background:rgba(140,82,255,0.1);color:#b388ff;">
+          <i class="fa-solid fa-code-compare"></i>
+        </div>
+        Compare Mode Active
+      </h3>
+      ${statusMsg}
+      <p style="color:rgba(255,255,255,0.35);margin-top:6px;font-size:12px;">
+        Exit Compare Mode to view individual risk analysis.
+      </p>
+    </div>`;
 }
 
 function renderComparisonPanel() {
