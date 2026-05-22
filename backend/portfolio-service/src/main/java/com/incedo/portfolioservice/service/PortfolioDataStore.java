@@ -193,27 +193,75 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     // AGGRESSIVE PORTFOLIO → Expected: HIGH risk
     //
-    // Shows ALL breach types: CONCENTRATION_RISK + ALLOCATION_DRIFT + DAILY_DROP (when market dips)
+    // Shows CONCENTRATION_RISK + ALLOCATION_DRIFT breaches.
     //
-    // Strategy: Use STABLE expensive stocks (TCS=₹3912, BAJFINANCE=₹7285)
-    // for concentration — they don't drop 40% like NVDA/TSLA do.
-    // This guarantees concentration breach even after price movement.
+    // Different clients are over-concentrated in DIFFERENT stocks
+    // (realistic — not everyone makes the same mistake).
     //
-    // Target portfolio value: ~₹80,000
+    // 5 variations based on clientId % 5:
+    //   Group 0: Over-concentrated in TCS
+    //   Group 1: Over-concentrated in BAJFINANCE
+    //   Group 2: Over-concentrated in RELIANCE
+    //   Group 3: Over-concentrated in LT (Larsen & Toubro)
+    //   Group 4: Over-concentrated in HDFCBANK
     // ---------------------------------------------------------------
     private List<Holding> buildAggressiveHoldings(int clientId) {
-        int v = clientId % 5;
-        // TCS @ ₹3912 × 8 = ₹31,296 out of ~₹80,000 = ~39% (CONCENTRATION BREACH >20%)
-        // BAJFINANCE @ ₹7285 × 3 = ₹21,856 out of ~₹80,000 = ~27% (CONCENTRATION BREACH >20%)
-        // Both are stable Indian stocks — won't crash 40% like NVDA
-        // Also set targets far from actual for ALLOCATION_DRIFT breaches
-        return Arrays.asList(
-            new Holding("TCS",       "TCS Ltd.",             8 + v,  10.0),   // actual ~39%, target 10% → CONCENTRATION + DRIFT
-            new Holding("BAJFINANCE","Bajaj Finance",        3 + v,  10.0),   // actual ~27%, target 10% → CONCENTRATION + DRIFT
-            new Holding("NVDA",      "NVIDIA Corp.",         6 + v,  20.0),   // actual ~8%, target 20% → DRIFT BREACH
-            new Holding("META",      "Meta Platforms",       5 + v,  20.0),   // actual ~4%, target 20% → DRIFT BREACH
-            new Holding("AAPL",      "Apple Inc.",          20 + v,  20.0),   // actual ~5%, target 20% → DRIFT BREACH
-            new Holding("GOOGL",     "Alphabet Inc.",       25 + v,  20.0)    // actual ~6%, target 20% → DRIFT BREACH
-        );
+        int group = clientId % 5;
+
+        return switch (group) {
+            case 0 -> Arrays.asList(
+                // Over-concentrated in TCS (₹3912)
+                new Holding("TCS",       "TCS Ltd.",            9,  10.0),   // actual ~40% → CONCENTRATION
+                new Holding("BAJFINANCE","Bajaj Finance",       2,  15.0),   // actual ~17%
+                new Holding("AAPL",      "Apple Inc.",         25,  20.0),   // actual ~5% → DRIFT
+                new Holding("MSFT",      "Microsoft Corp.",    12,  20.0),   // actual ~6% → DRIFT
+                new Holding("SBIN",      "State Bank of India",12,  15.0),   // actual ~11%
+                new Holding("INFY",      "Infosys Ltd.",       60,  20.0)    // actual ~13% → DRIFT
+            );
+            case 1 -> Arrays.asList(
+                // Over-concentrated in BAJFINANCE (₹7285)
+                new Holding("BAJFINANCE","Bajaj Finance",       4,  10.0),   // actual ~45% → CONCENTRATION
+                new Holding("TCS",       "TCS Ltd.",            3,  15.0),   // actual ~18%
+                new Holding("GOOGL",     "Alphabet Inc.",      30,  20.0),   // actual ~8% → DRIFT
+                new Holding("AMZN",      "Amazon.com Inc.",    30,  20.0),   // actual ~8% → DRIFT
+                new Holding("WIPRO",     "Wipro Ltd.",         15,  15.0),   // actual ~12%
+                new Holding("SUNPHARMA", "Sun Pharmaceutical",  3,  20.0)    // actual ~7% → DRIFT
+            );
+            case 2 -> Arrays.asList(
+                // Over-concentrated in RELIANCE (₹2985)
+                new Holding("RELIANCE",  "Reliance Industries", 8,  10.0),   // actual ~38% → CONCENTRATION
+                new Holding("HDFCBANK",  "HDFC Bank",           5,  15.0),   // actual ~13%
+                new Holding("META",      "Meta Platforms",      5,  20.0),   // actual ~4% → DRIFT
+                new Holding("AAPL",      "Apple Inc.",          30,  20.0),   // actual ~9% → DRIFT
+                new Holding("ICICIBANK", "ICICI Bank",          8,  15.0),   // actual ~14%
+                new Holding("NVDA",      "NVIDIA Corp.",        3,  20.0)    // actual ~4% → DRIFT
+            );
+            case 3 -> Arrays.asList(
+                // Over-concentrated in LT (₹3478)
+                new Holding("LT",        "Larsen & Toubro",     7,  10.0),   // actual ~37% → CONCENTRATION
+                new Holding("KOTAKBANK", "Kotak Mahindra Bank", 4,  15.0),   // actual ~11%
+                new Holding("TSLA",      "Tesla Inc.",          40,  20.0),   // actual ~10% → DRIFT
+                new Holding("GOOGL",     "Alphabet Inc.",       25,  20.0),   // actual ~7% → DRIFT
+                new Holding("HINDUNILVR","Hindustan Unilever",  3,  15.0),   // actual ~12%
+                new Holding("SBIN",      "State Bank of India", 15,  20.0)    // actual ~19%
+            );
+            case 4 -> Arrays.asList(
+                // Over-concentrated in HDFCBANK (₹1678) — needs more shares
+                new Holding("HDFCBANK",  "HDFC Bank",          12,  10.0),   // actual ~35% → CONCENTRATION
+                new Holding("ASIANPAINT","Asian Paints",        3,  15.0),   // actual ~15%
+                new Holding("AMZN",      "Amazon.com Inc.",    20,  20.0),   // actual ~6% → DRIFT
+                new Holding("MSFT",      "Microsoft Corp.",     8,  20.0),   // actual ~6% → DRIFT
+                new Holding("SUNPHARMA", "Sun Pharmaceutical",  3,  15.0),   // actual ~8%
+                new Holding("INFY",      "Infosys Ltd.",       80,  20.0)    // actual ~25% → CONCENTRATION
+            );
+            default -> Arrays.asList(
+                new Holding("TCS",       "TCS Ltd.",            9,  10.0),
+                new Holding("BAJFINANCE","Bajaj Finance",       2,  15.0),
+                new Holding("AAPL",      "Apple Inc.",         25,  20.0),
+                new Holding("MSFT",      "Microsoft Corp.",    12,  20.0),
+                new Holding("SBIN",      "State Bank of India",12,  15.0),
+                new Holding("INFY",      "Infosys Ltd.",       60,  20.0)
+            );
+        };
     }
 }
