@@ -555,6 +555,23 @@ align-items:center;
 gap:14px;
 }
 
+/* ================================================================
+   STOCK SPARKLINES
+   ================================================================ */
+
+.sparkline-wrapper{
+display:flex;
+align-items:center;
+justify-content:center;
+min-width:80px;
+height:30px;
+flex-shrink:0;
+}
+
+.sparkline-wrapper canvas{
+display:block;
+}
+
 .market-right{
 text-align:right;
 min-width:80px;

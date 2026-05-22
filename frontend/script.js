@@ -60,6 +60,10 @@ let riskDonutChart = null;
 let marketLineChart = null;
 let breachBarChart = null;
 
+// Sparkline data storage
+let sparklineData = {}; // { stockSymbol: [price1, price2, ...] } last 12 points
+let sparklineCharts = {}; // { stockSymbol: Chart instance }
+
 // ---------------------------------------------------------------
 // HELPER: Animated Counter Effect
 // ---------------------------------------------------------------
@@ -216,6 +220,17 @@ async function loadMarketData() {
     const response = await fetch(`${MARKET_DATA_SERVICE_URL}/market-data`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     allMarketData = await response.json();
+
+    // Accumulate sparkline data for each stock
+    allMarketData.forEach(m => {
+      const symbol = m.stockSymbol || m.symbol || m.stockName;
+      const price = m.currentPrice || m.price || 0;
+      if (!sparklineData[symbol]) sparklineData[symbol] = [];
+      sparklineData[symbol].push(price);
+      // Keep last 12 data points
+      if (sparklineData[symbol].length > 12) sparklineData[symbol].shift();
+    });
+
     renderMarketCards(allMarketData);
     updateMarketLineChart(allMarketData);
 
@@ -257,6 +272,9 @@ function renderMarketCards(marketData) {
             <p>₹${price}</p>
           </div>
         </div>
+        <div class="sparkline-wrapper">
+          <canvas id="spark-${symbol}" width="80" height="30"></canvas>
+        </div>
         <div class="market-right">
           <p class="${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${change}%</p>
           <p style="font-size:12px;color:#aaa;">Day: ${parseFloat(dailyChange) >= 0 ? '+' : ''}${dailyChange}%</p>
@@ -264,6 +282,55 @@ function renderMarketCards(marketData) {
       </div>`;
   });
   document.getElementById("market-data").innerHTML = html || "<p>No market data found.</p>";
+  renderSparklines(marketData);
+}
+
+// ---------------------------------------------------------------
+// RENDER: Sparkline mini-charts for each stock
+// ---------------------------------------------------------------
+function renderSparklines(marketData) {
+  // Destroy previous chart instances
+  Object.values(sparklineCharts).forEach(chart => chart.destroy());
+  sparklineCharts = {};
+
+  marketData.forEach(m => {
+    const symbol = m.stockSymbol || m.symbol || m.stockName;
+    const canvas = document.getElementById(`spark-${symbol}`);
+    if (!canvas || !sparklineData[symbol] || sparklineData[symbol].length < 2) return;
+
+    const data = sparklineData[symbol];
+    const isPositive = data[data.length - 1] >= data[0];
+    const color = isPositive ? '#00ff64' : '#ff5e5e';
+
+    sparklineCharts[symbol] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: data.map((_, i) => i),
+        datasets: [{
+          data: data,
+          borderColor: color,
+          borderWidth: 1.5,
+          fill: true,
+          backgroundColor: isPositive ? 'rgba(0,255,100,0.08)' : 'rgba(255,94,94,0.08)',
+          tension: 0.4,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        },
+        animation: false
+      }
+    });
+  });
 }
 
 // ---------------------------------------------------------------
