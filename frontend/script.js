@@ -89,6 +89,58 @@ function animateCounter(element, start, end, duration, prefix = '', suffix = '',
 }
 
 // ---------------------------------------------------------------
+// TOAST NOTIFICATION SYSTEM
+// ---------------------------------------------------------------
+let previousHighRiskClients = new Set();
+
+function showToast(title, message, type = 'danger') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  
+  const toast = document.createElement('div');
+  const typeClass = type === 'warning' ? 'toast-warning' : type === 'success' ? 'toast-success' : '';
+  const icon = type === 'warning' ? 'fa-exclamation-triangle' 
+             : type === 'success' ? 'fa-check-circle' 
+             : 'fa-circle-exclamation';
+  
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  toast.className = `toast ${typeClass}`;
+  toast.innerHTML = `
+    <i class="fa-solid ${icon} toast-icon"></i>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-message">${message}</div>
+      <div class="toast-time">${timeStr}</div>
+    </div>
+    <button class="toast-close" onclick="dismissToast(this)">&times;</button>
+  `;
+  
+  container.appendChild(toast);
+  
+  // Auto dismiss after 5 seconds
+  setTimeout(() => {
+    toast.classList.add('toast-dismiss');
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+  
+  // Max 4 toasts visible at once
+  const toasts = container.querySelectorAll('.toast');
+  if (toasts.length > 4) {
+    toasts[0].remove();
+  }
+}
+
+function dismissToast(closeBtn) {
+  const toast = closeBtn.closest('.toast');
+  if (toast) {
+    toast.classList.add('toast-dismiss');
+    setTimeout(() => toast.remove(), 300);
+  }
+}
+
+// ---------------------------------------------------------------
 // HELPER: Update Health Score Widget
 // ---------------------------------------------------------------
 function updateHealthScoreWidget(score) {
@@ -222,6 +274,28 @@ async function loadRiskAnalysis() {
     const response = await fetch(`${RISK_SERVICE_URL}/risk-analysis`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     allRiskData = await response.json();
+
+    // Detect new HIGH risk clients and show toast notifications
+    const currentHighRiskClients = new Set(
+      allRiskData.filter(r => r.riskLevel === "HIGH").map(r => r.clientId)
+    );
+
+    currentHighRiskClients.forEach(clientId => {
+      if (!previousHighRiskClients.has(clientId)) {
+        const client = allRiskData.find(r => r.clientId === clientId);
+        if (client && previousHighRiskClients.size > 0) {
+          // Only show toast after initial load (not on first page load)
+          showToast(
+            'High Risk Alert',
+            `${client.clientName} has escalated to HIGH risk. Immediate attention required.`,
+            'danger'
+          );
+        }
+      }
+    });
+
+    previousHighRiskClients = currentHighRiskClients;
+
     updateDashboardSummary(allRiskData);
 
     // Re-render portfolio cards with updated values and risk levels
@@ -546,6 +620,7 @@ async function generateAIReport(clientId) {
     }
 
     aiReportPinned = true;
+    showToast('AI Report Ready', `Risk assessment generated for portfolio #${clientId}.`, 'success');
 
     // Update button to success state
     if (btn) {
