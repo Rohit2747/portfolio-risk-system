@@ -189,8 +189,10 @@ async function loadRiskAnalysis() {
   } catch (err) {
     document.getElementById("ai-summary").textContent =
       `⚠ Risk Analysis Service unavailable. Start service on port 8082. (${err.message})`;
-    document.getElementById("health-status").textContent = "Portfolio Health: UNAVAILABLE";
+    document.getElementById("health-status").textContent = "UNAVAILABLE";
     document.getElementById("health-status").style.color = "gray";
+    document.getElementById("health-status").style.background = "rgba(128,128,128,0.1)";
+    document.getElementById("health-status").style.border = "1px solid rgba(128,128,128,0.25)";
   }
 }
 
@@ -224,14 +226,20 @@ function updateDashboardSummary(riskData) {
   // ---- Health Status ----
   const healthStatus = document.getElementById("health-status");
   if (highCount > 20) {
-    healthStatus.textContent = "Portfolio Health: CRITICAL";
-    healthStatus.style.color = "red";
+    healthStatus.textContent = "CRITICAL";
+    healthStatus.style.background = "rgba(255,94,94,0.1)";
+    healthStatus.style.border = "1px solid rgba(255,94,94,0.25)";
+    healthStatus.style.color = "#ff5e5e";
   } else if (highCount > 5 || mediumCount > 30) {
-    healthStatus.textContent = "Portfolio Health: MODERATE";
+    healthStatus.textContent = "MODERATE";
+    healthStatus.style.background = "rgba(255,170,0,0.1)";
+    healthStatus.style.border = "1px solid rgba(255,170,0,0.25)";
     healthStatus.style.color = "orange";
   } else {
-    healthStatus.textContent = "Portfolio Health: GOOD";
-    healthStatus.style.color = "lime";
+    healthStatus.textContent = "GOOD";
+    healthStatus.style.background = "rgba(0,255,100,0.1)";
+    healthStatus.style.border = "1px solid rgba(0,255,100,0.25)";
+    healthStatus.style.color = "#00ff64";
   }
 
   // ---- AI Summary ----
@@ -244,34 +252,45 @@ function updateDashboardSummary(riskData) {
   // ---- Allocation Drift ----
   const allocationDrift = document.getElementById("allocation-drift");
   if (driftCount > 0) {
-    allocationDrift.textContent =
-      `Allocation Drift Alert: ${driftCount} breach(es) detected across portfolios. Rebalancing recommended.`;
-    allocationDrift.style.color = "red";
+    allocationDrift.innerHTML =
+      '<i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i><span>Allocation Drift: ' + driftCount + ' breach(es) detected. Rebalancing recommended.</span>';
+    allocationDrift.style.borderLeftColor = "red";
+    allocationDrift.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
-    allocationDrift.textContent = "Allocation Drift: All portfolios within target allocation bands.";
-    allocationDrift.style.color = "lime";
+    allocationDrift.innerHTML =
+      '<i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i><span>Allocation Drift: All portfolios within target allocation bands.</span>';
+    allocationDrift.style.borderLeftColor = "rgba(0,255,100,0.3)";
+    allocationDrift.querySelector('.breach-indicator-icon').style.color = "#00ff64";
   }
 
   // ---- Stock Concentration ----
   const stockExposure = document.getElementById("stock-exposure");
   if (concCount > 0) {
-    stockExposure.textContent =
-      `Concentration Risk: ${concCount} breach(es) detected. Single-stock exposure exceeded 20% threshold.`;
-    stockExposure.style.color = "red";
+    stockExposure.innerHTML =
+      '<i class="fa-solid fa-chart-pie breach-indicator-icon"></i><span>Concentration Risk: ' + concCount + ' breach(es). Single-stock exposure exceeded 20% threshold.</span>';
+    stockExposure.style.borderLeftColor = "red";
+    stockExposure.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
-    stockExposure.textContent = "Stock Concentration: All holdings within acceptable exposure limits.";
-    stockExposure.style.color = "lime";
+    stockExposure.innerHTML =
+      '<i class="fa-solid fa-chart-pie breach-indicator-icon"></i><span>Stock Concentration: All holdings within acceptable exposure limits.</span>';
+    stockExposure.style.borderLeftColor = "rgba(0,255,100,0.3)";
+    stockExposure.querySelector('.breach-indicator-icon').style.color = "#00ff64";
   }
 
   // ---- Daily Drop ----
   const dailyDrop = document.getElementById("daily-drop");
   if (dropCount > 0) {
-    dailyDrop.textContent =
-      `Daily Drop Alert: ${dropCount} portfolio(s) declined more than 3% today. High volatility detected.`;
-    dailyDrop.style.color = "red";
+    dailyDrop.innerHTML =
+      '<i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i><span>Daily Drop: ' + dropCount + ' portfolio(s) declined more than 3% today.</span>';
+    dailyDrop.style.borderLeftColor = "red";
+    dailyDrop.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
-    dailyDrop.textContent = `Daily Drop: Average portfolio change today: ${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}%. Within acceptable range.`;
-    dailyDrop.style.color = avgDaily < -1 ? "orange" : "lime";
+    const dropColor = avgDaily < -1 ? "orange" : "rgba(0,255,100,0.3)";
+    const dropIconColor = avgDaily < -1 ? "orange" : "#00ff64";
+    dailyDrop.innerHTML =
+      '<i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i><span>Daily Drop: Average portfolio change today: ' + (avgDaily >= 0 ? '+' : '') + avgDaily.toFixed(2) + '%. Within acceptable range.</span>';
+    dailyDrop.style.borderLeftColor = dropColor;
+    dailyDrop.querySelector('.breach-indicator-icon').style.color = dropIconColor;
   }
 
   // ---- Alert List ----
@@ -318,7 +337,7 @@ function updateDashboardSummary(riskData) {
     const riskScore = 100 - healthScore;
     fill.style.width = riskScore + "%";
     fill.style.background = riskScore > 60 ? "red" : riskScore > 30 ? "orange" : "lime";
-    document.getElementById("risk-percentage").textContent = `Risk Score: ${riskScore}%`;
+    document.getElementById("risk-percentage").textContent = `${riskScore}%`;
   }
 
   // Update top stats
@@ -388,8 +407,18 @@ async function fetchAndRenderAIInsight(clientId) {
     const severityColor = insight.severity === "CRITICAL" ? "red"
                         : insight.severity === "WARNING" ? "orange" : "lime";
     document.getElementById("health-status").textContent =
-      `AI Severity: ${insight.severity} | Provider: ${insight.aiProvider}`;
+      `${insight.severity}`;
     document.getElementById("health-status").style.color = severityColor;
+    if (insight.severity === "CRITICAL") {
+      document.getElementById("health-status").style.background = "rgba(255,94,94,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(255,94,94,0.25)";
+    } else if (insight.severity === "WARNING") {
+      document.getElementById("health-status").style.background = "rgba(255,170,0,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(255,170,0,0.25)";
+    } else {
+      document.getElementById("health-status").style.background = "rgba(0,255,100,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(0,255,100,0.25)";
+    }
 
   } catch (err) {
     // AI Insight Service may not be running — silently skip
@@ -433,8 +462,18 @@ async function generateAIReport(clientId) {
     const severityColor = insight.severity === "CRITICAL" ? "red"
                         : insight.severity === "WARNING" ? "orange" : "lime";
     document.getElementById("health-status").textContent =
-      `AI Severity: ${insight.severity} | Provider: ${insight.aiProvider}`;
+      `${insight.severity}`;
     document.getElementById("health-status").style.color = severityColor;
+    if (insight.severity === "CRITICAL") {
+      document.getElementById("health-status").style.background = "rgba(255,94,94,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(255,94,94,0.25)";
+    } else if (insight.severity === "WARNING") {
+      document.getElementById("health-status").style.background = "rgba(255,170,0,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(255,170,0,0.25)";
+    } else {
+      document.getElementById("health-status").style.background = "rgba(0,255,100,0.1)";
+      document.getElementById("health-status").style.border = "1px solid rgba(0,255,100,0.25)";
+    }
 
     // Auto-scroll to AI Insight Summary section
     const aiCard = document.querySelector(".ai-summary-card");
@@ -539,8 +578,19 @@ function renderRiskPanel(riskData) {
   document.getElementById("ai-recommendation").innerHTML = suggestion;
 
   const healthStatus = document.getElementById("health-status");
-  healthStatus.textContent = `Portfolio Health: ${riskData.riskLevel}`;
+  healthStatus.textContent = riskData.riskLevel;
   healthStatus.style.color = riskColor;
+  if (riskData.riskLevel === "HIGH") {
+    healthStatus.style.background = "rgba(255,94,94,0.1)";
+    healthStatus.style.border = "1px solid rgba(255,94,94,0.25)";
+  } else if (riskData.riskLevel === "MEDIUM") {
+    healthStatus.style.background = "rgba(255,170,0,0.1)";
+    healthStatus.style.border = "1px solid rgba(255,170,0,0.25)";
+  } else {
+    healthStatus.style.background = "rgba(0,255,100,0.1)";
+    healthStatus.style.border = "1px solid rgba(0,255,100,0.25)";
+    healthStatus.style.color = "#00ff64";
+  }
 
   // Update drift/exposure/drop indicators for this client
   updateBreachIndicators(riskData);
@@ -563,7 +613,7 @@ function renderRiskPanel(riskData) {
   const fill = document.querySelector(".risk-fill");
   fill.style.width = clientRiskScore + "%";
   fill.style.background = clientRiskScore > 60 ? "red" : clientRiskScore > 30 ? "orange" : "lime";
-  document.getElementById("risk-percentage").textContent = `Risk Score: ${clientRiskScore}%`;
+  document.getElementById("risk-percentage").textContent = `${clientRiskScore}%`;
 }
 
 function updateBreachIndicators(riskData) {
@@ -579,28 +629,36 @@ function updateBreachIndicators(riskData) {
     ? riskData.breaches.find(b => b.breachType === "DAILY_DROP") : null;
 
   if (driftBreach) {
-    driftEl.textContent = `Allocation Drift: ${driftBreach.description}`;
-    driftEl.style.color = "red";
+    driftEl.innerHTML = '<i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i><span>Allocation Drift: ' + driftBreach.description + '</span>';
+    driftEl.style.borderLeftColor = "red";
+    driftEl.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
-    driftEl.textContent = `Allocation Drift: Within target bands for ${riskData.clientName}.`;
-    driftEl.style.color = "lime";
+    driftEl.innerHTML = '<i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i><span>Allocation Drift: Within target bands for ' + riskData.clientName + '.</span>';
+    driftEl.style.borderLeftColor = "rgba(0,255,100,0.3)";
+    driftEl.querySelector('.breach-indicator-icon').style.color = "#00ff64";
   }
 
   if (concBreach) {
-    expEl.textContent = `Concentration: ${concBreach.description}`;
-    expEl.style.color = "red";
+    expEl.innerHTML = '<i class="fa-solid fa-chart-pie breach-indicator-icon"></i><span>Concentration: ' + concBreach.description + '</span>';
+    expEl.style.borderLeftColor = "red";
+    expEl.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
-    expEl.textContent = `Stock Concentration: All holdings within 20% threshold.`;
-    expEl.style.color = "lime";
+    expEl.innerHTML = '<i class="fa-solid fa-chart-pie breach-indicator-icon"></i><span>Stock Concentration: All holdings within 20% threshold.</span>';
+    expEl.style.borderLeftColor = "rgba(0,255,100,0.3)";
+    expEl.querySelector('.breach-indicator-icon').style.color = "#00ff64";
   }
 
   if (dropBreach) {
-    dropEl.textContent = `Daily Drop: ${dropBreach.description}`;
-    dropEl.style.color = "red";
+    dropEl.innerHTML = '<i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i><span>Daily Drop: ' + dropBreach.description + '</span>';
+    dropEl.style.borderLeftColor = "red";
+    dropEl.querySelector('.breach-indicator-icon').style.color = "red";
   } else {
     const daily = (riskData.dailyChangePercent || 0).toFixed(2);
-    dropEl.textContent = `Daily Drop: Portfolio change today: ${daily >= 0 ? '+' : ''}${daily}%`;
-    dropEl.style.color = parseFloat(daily) < -1 ? "orange" : "lime";
+    const dropColor = parseFloat(daily) < -1 ? "orange" : "rgba(0,255,100,0.3)";
+    const dropIconColor = parseFloat(daily) < -1 ? "orange" : "#00ff64";
+    dropEl.innerHTML = '<i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i><span>Daily Drop: Portfolio change today: ' + (daily >= 0 ? '+' : '') + daily + '%</span>';
+    dropEl.style.borderLeftColor = dropColor;
+    dropEl.querySelector('.breach-indicator-icon').style.color = dropIconColor;
   }
 }
 
@@ -678,8 +736,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   alertToggle.addEventListener("click", () => {
     alertList.classList.toggle("hide-alerts");
-    alertToggle.innerHTML = alertList.classList.contains("hide-alerts")
-      ? "Risk Alerts ▶" : "Risk Alerts ▼";
+    const chevron = document.querySelector('.alert-chevron');
+    if (chevron) {
+      chevron.style.transform = alertList.classList.contains("hide-alerts") ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
   });
 
   // INITIAL LOAD — load all data on page start

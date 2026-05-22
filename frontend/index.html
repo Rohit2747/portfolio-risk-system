@@ -242,56 +242,49 @@ AI Recommendation Engine Initializing...
 
 <!-- RISK METER -->
 
-<div class="risk-meter-container">
-
-<h3>AI Risk Meter</h3>
-
-<div class="risk-meter">
-
-<div class="risk-fill"></div>
-
-</div>
-
-<p id="risk-percentage">
-Risk Score: 0%
-</p>
-
+<div class="risk-meter-widget">
+  <span class="risk-meter-label">AI RISK METER</span>
+  <div class="risk-meter-row">
+    <div class="risk-meter">
+      <div class="risk-fill"></div>
+    </div>
+    <span class="risk-meter-percent" id="risk-percentage">0%</span>
+  </div>
 </div>
 
 <!-- HEALTH STATUS & INDICATORS -->
 
-<h3 id="health-status">
-Portfolio Health: ANALYZING...
-</h3>
+<div class="health-status-widget">
+  <span class="health-status-label">PORTFOLIO STATUS</span>
+  <div class="health-status-badge" id="health-status">ANALYZING...</div>
+</div>
 
-<p id="allocation-drift">
-Allocation Drift Status: Monitoring...
-</p>
-
-<p id="stock-exposure">
-Stock Exposure Status: Monitoring...
-</p>
-
-<p id="daily-drop">
-Daily Portfolio Drop Status: Monitoring...
-</p>
+<div class="breach-indicators-widget">
+  <span class="breach-indicators-label">RISK INDICATORS</span>
+  <div class="breach-indicator-row" id="allocation-drift">
+    <i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i>
+    <span>Allocation Drift: Monitoring...</span>
+  </div>
+  <div class="breach-indicator-row" id="stock-exposure">
+    <i class="fa-solid fa-chart-pie breach-indicator-icon"></i>
+    <span>Stock Exposure: Monitoring...</span>
+  </div>
+  <div class="breach-indicator-row" id="daily-drop">
+    <i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i>
+    <span>Daily Drop: Monitoring...</span>
+  </div>
+</div>
 
 <!-- ALERT BOX -->
 
-<div id="alert-box">
-
-<h3 id="alert-toggle">
-Risk Alerts ▼
-</h3>
-
-<ul id="alert-list">
-
-<li>
-Monitoring portfolio risk events...
-</li>
-
-</ul>
-
+<div class="alert-box-widget" id="alert-box">
+  <div class="alert-box-header" id="alert-toggle">
+    <span><i class="fa-solid fa-bell"></i> RISK ALERTS</span>
+    <i class="fa-solid fa-chevron-down alert-chevron"></i>
+  </div>
+  <ul id="alert-list">
+    <li>Monitoring portfolio risk events...</li>
+  </ul>
 </div>
 
 <!-- LAST UPDATED -->
