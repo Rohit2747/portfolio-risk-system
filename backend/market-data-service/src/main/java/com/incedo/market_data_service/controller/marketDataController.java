@@ -12,6 +12,11 @@ import java.util.Map;
  *
  * Exposes REST APIs for real-time equity prices.
  * Prices are updated every 5 seconds by PriceSimulatorService.
+ *
+ * Endpoints:
+ *   GET /market-data          → all 20 equities (full marketData objects)
+ *   GET /market-data/prices   → symbol → currentPrice map (used by Risk Service)
+ *   GET /market-data/{symbol} → single stock details (used by Risk Service for openingPrice)
  */
 @RestController
 @CrossOrigin(origins = "*")
@@ -36,170 +41,35 @@ public class marketDataController {
      * Frontend polls this every 5 seconds for live updates.
      */
     @GetMapping("/market-data")
-public List<marketData> getMarketData(){
+    public List<marketData> getMarketData() {
+        return priceSimulatorService.getAllPrices();
+    }
 
-    List<marketData> marketDataList = new ArrayList<>();
+    /**
+     * Returns a map of symbol → currentPrice for all equities.
+     * Used by Risk Analysis Service for fast bulk portfolio valuation.
+     *
+     * Example response:
+     * { "AAPL": 189.50, "MSFT": 418.30, "NVDA": 890.20, ... }
+     */
+    @GetMapping("/market-data/prices")
+    public Map<String, Double> getPriceMap() {
+        return priceSimulatorService.getPriceMap();
+    }
 
-    marketDataList.add(
-            new marketData(
-                    "Apple",
-                    Math.round((210 + random.nextDouble()*15)*100.0)/100.0,
-                    Math.round((-3 + random.nextDouble()*6)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Microsoft",
-                    Math.round((330 + random.nextDouble()*20)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*5)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "NVIDIA",
-                    Math.round((950 + random.nextDouble()*40)*100.0)/100.0,
-                    Math.round((-4 + random.nextDouble()*8)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Amazon",
-                    Math.round((180 + random.nextDouble()*12)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*5)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Google",
-                    Math.round((175 + random.nextDouble()*10)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Meta",
-                    Math.round((500 + random.nextDouble()*25)*100.0)/100.0,
-                    Math.round((-3 + random.nextDouble()*5)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Tesla",
-                    Math.round((180 + random.nextDouble()*15)*100.0)/100.0,
-                    Math.round((-5 + random.nextDouble()*10)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Netflix",
-                    Math.round((610 + random.nextDouble()*25)*100.0)/100.0,
-                    Math.round((-3 + random.nextDouble()*6)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "HDFC",
-                    Math.round((1650 + random.nextDouble()*50)*100.0)/100.0,
-                    Math.round((-1 + random.nextDouble()*3)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Reliance",
-                    Math.round((2900 + random.nextDouble()*60)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "ICICI",
-                    Math.round((1100 + random.nextDouble()*40)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Infosys",
-                    Math.round((1500 + random.nextDouble()*35)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "TCS",
-                    Math.round((3900 + random.nextDouble()*70)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Wipro",
-                    Math.round((520 + random.nextDouble()*20)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "SBI",
-                    Math.round((850 + random.nextDouble()*25)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*5)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Axis Bank",
-                    Math.round((1180 + random.nextDouble()*35)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Adani Ports",
-                    Math.round((1400 + random.nextDouble()*50)*100.0)/100.0,
-                    Math.round((-3 + random.nextDouble()*6)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Bajaj Finance",
-                    Math.round((7200 + random.nextDouble()*120)*100.0)/100.0,
-                    Math.round((-3 + random.nextDouble()*6)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "ITC",
-                    Math.round((440 + random.nextDouble()*12)*100.0)/100.0,
-                    Math.round((-1 + random.nextDouble()*3)*100.0)/100.0
-            )
-    );
-
-    marketDataList.add(
-            new marketData(
-                    "Asian Paints",
-                    Math.round((2900 + random.nextDouble()*60)*100.0)/100.0,
-                    Math.round((-2 + random.nextDouble()*4)*100.0)/100.0
-            )
-    );
-
-    return marketDataList;
-}
+    /**
+     * Returns full market data for a single stock symbol.
+     * Used by Risk Analysis Service to get openingPrice for daily change calculation.
+     *
+     * Example: GET /market-data/AAPL
+     * Returns: { "stockSymbol": "AAPL", "currentPrice": 189.50, "openingPrice": 187.50, ... }
+     */
+    @GetMapping("/market-data/{symbol}")
+    public marketData getMarketDataBySymbol(@PathVariable String symbol) {
+        marketData data = priceSimulatorService.getCurrentPrice(symbol);
+        if (data == null) {
+            throw new RuntimeException("Stock symbol not found: " + symbol);
+        }
+        return data;
+    }
 }

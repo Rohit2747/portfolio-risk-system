@@ -71,10 +71,13 @@ public class RiskCalculationEngine {
         // Step 2: Get current price map from Market Data Service
         Map<String, Double> priceMap = fetchPriceMap();
 
-        // Step 3: Compute risk for each portfolio
+        // Step 3: Get opening price map (bulk fetch for performance)
+        Map<String, Double> openingPriceMap = fetchOpeningPriceMap();
+
+        // Step 4: Compute risk for each portfolio
         List<riskAnalysis> results = new ArrayList<>();
         for (PortfolioDTO portfolio : portfolios) {
-            riskAnalysis analysis = analyzePortfolio(portfolio, priceMap);
+            riskAnalysis analysis = analyzePortfolio(portfolio, priceMap, openingPriceMap);
             results.add(analysis);
         }
 
@@ -84,7 +87,7 @@ public class RiskCalculationEngine {
     /**
      * Analyzes a single portfolio against current market prices.
      */
-    public riskAnalysis analyzePortfolio(PortfolioDTO portfolio, Map<String, Double> priceMap) {
+    public riskAnalysis analyzePortfolio(PortfolioDTO portfolio, Map<String, Double> priceMap, Map<String, Double> openingPriceMap) {
 
         List<HoldingDTO> holdings = portfolio.getHoldings();
         if (holdings == null || holdings.isEmpty()) {
@@ -100,7 +103,9 @@ public class RiskCalculationEngine {
         // First pass: compute totals
         for (HoldingDTO holding : holdings) {
             double currentPrice = getPrice(priceMap, holding.getStockSymbol());
-            double openingPrice = getOpeningPrice(holding.getStockSymbol());
+            double openingPrice = getPrice(openingPriceMap, holding.getStockSymbol());
+            // If opening price is 0 (not available), use current price (0% daily change)
+            if (openingPrice == 0.0) openingPrice = currentPrice;
             totalCurrentValue += holding.getQuantity() * currentPrice;
             totalOpeningValue += holding.getQuantity() * openingPrice;
         }
@@ -270,29 +275,39 @@ public class RiskCalculationEngine {
     }
 
     /**
-     * Gets opening price for a stock.
-     * In local mode: falls back to current price (no daily change simulated initially).
-     * In AWS mode: would store opening prices in DynamoDB at market open.
-     *
-     * NOTE: The Market Data Service tracks opening prices internally.
-     * For a cleaner implementation, call /market-data/{symbol} and use openingPrice field.
-     * For performance here, we use current price as fallback for initial runs.
+     * Fetches opening prices for all stocks in a single bulk call.
+     * Returns a map of symbol → opening price.
+     * Falls back to current prices if the endpoint is unavailable.
      */
-    private double getOpeningPrice(String symbol) {
+    @SuppressWarnings("unchecked")
+    private Map<String, Double> fetchOpeningPriceMap() {
         try {
-            // Call Market Data Service to get opening price
-            var response = restTemplate.getForObject(
-                marketDataServiceUrl + "/market-data/" + symbol,
-                java.util.Map.class
-            );
-            if (response != null && response.containsKey("openingPrice")) {
-                Object val = response.get("openingPrice");
-                if (val instanceof Number) return ((Number) val).doubleValue();
+            List<Map<String, Object>> allData = restTemplate.exchange(
+                marketDataServiceUrl + "/market-data",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            ).getBody();
+
+            Map<String, Double> openingMap = new java.util.HashMap<>();
+            if (allData != null) {
+                for (Map<String, Object> item : allData) {
+                    String symbol = item.containsKey("stockSymbol")
+                        ? item.get("stockSymbol").toString()
+                        : (item.containsKey("symbol") ? item.get("symbol").toString() : null);
+                    if (symbol != null && item.containsKey("openingPrice")) {
+                        Object val = item.get("openingPrice");
+                        if (val instanceof Number) {
+                            openingMap.put(symbol, ((Number) val).doubleValue());
+                        }
+                    }
+                }
             }
+            return openingMap;
         } catch (Exception e) {
-            // fallback: use current price (0% daily change)
+            System.err.println("[RiskService] ERROR fetching opening prices: " + e.getMessage());
+            return new java.util.HashMap<>();
         }
-        return getPrice(fetchPriceMap(), symbol);
     }
 
     private riskAnalysis buildEmptyAnalysis(PortfolioDTO portfolio) {
