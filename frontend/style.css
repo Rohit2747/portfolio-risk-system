@@ -1,11 +1,9 @@
 body{
-font-family:'Segoe UI',Arial,sans-serif;
-background:linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
-background-attachment:fixed;
+font-family:Arial,sans-serif;
+background:black;
 color:white;
 padding:30px;
 scroll-behavior:smooth;
-min-height:100vh;
 }
 
 h1{
@@ -772,123 +770,5 @@ opacity:0.5;
 
 to{
 opacity:1;
-}
-}
-
-
-
-/* ============================================ */
-/* DESIGN POLISH — Risk Badges & Animations    */
-/* ============================================ */
-
-/* RISK BADGE — colored pill on portfolio cards */
-.risk-badge{
-display:inline-block;
-padding:4px 12px;
-border-radius:20px;
-font-size:12px;
-font-weight:bold;
-letter-spacing:0.5px;
-text-transform:uppercase;
-}
-
-.risk-badge.low{
-background:rgba(0,255,120,0.15);
-color:#32ff7e;
-border:1px solid rgba(0,255,120,0.3);
-}
-
-.risk-badge.medium{
-background:rgba(255,170,0,0.15);
-color:#ffb347;
-border:1px solid rgba(255,170,0,0.3);
-}
-
-.risk-badge.high{
-background:rgba(255,70,70,0.15);
-color:#ff5e5e;
-border:1px solid rgba(255,70,70,0.3);
-animation:pulseBadge 1.5s infinite alternate;
-}
-
-.risk-badge.unknown{
-background:rgba(150,150,150,0.15);
-color:#aaa;
-border:1px solid rgba(150,150,150,0.3);
-}
-
-/* HIGH risk card pulse effect */
-.portfolio-card.high-risk-pulse{
-animation:pulseCard 2s infinite alternate;
-border-left:3px solid rgba(255,70,70,0.6) !important;
-}
-
-/* Live indicator dot for header */
-.live-indicator{
-display:inline-flex;
-align-items:center;
-gap:8px;
-font-size:14px;
-color:#888;
-margin-left:20px;
-}
-
-.live-dot{
-width:10px;
-height:10px;
-background:#32ff7e;
-border-radius:50%;
-box-shadow:0 0 8px #32ff7e;
-animation:pulseDot 1s infinite alternate;
-}
-
-/* Animated number counters */
-.counter-animate{
-transition:all 0.6s ease-out;
-}
-
-/* Subtle card entrance stagger */
-.service-item{
-opacity:0;
-animation:slideIn 0.4s ease forwards;
-}
-
-.service-item:nth-child(1){ animation-delay:0.05s; }
-.service-item:nth-child(2){ animation-delay:0.1s; }
-.service-item:nth-child(3){ animation-delay:0.15s; }
-.service-item:nth-child(4){ animation-delay:0.2s; }
-.service-item:nth-child(5){ animation-delay:0.25s; }
-.service-item:nth-child(6){ animation-delay:0.3s; }
-.service-item:nth-child(7){ animation-delay:0.35s; }
-.service-item:nth-child(8){ animation-delay:0.4s; }
-.service-item:nth-child(9){ animation-delay:0.45s; }
-.service-item:nth-child(10){ animation-delay:0.5s; }
-
-@keyframes slideIn{
-from{
-opacity:0;
-transform:translateY(10px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
-}
-
-@keyframes pulseBadge{
-from{
-box-shadow:0 0 4px rgba(255,70,70,0.3);
-}
-to{
-box-shadow:0 0 12px rgba(255,70,70,0.6);
-}
-}
-
-@keyframes pulseCard{
-from{
-box-shadow:0 0 8px rgba(255,70,70,0.1);
-}
-to{
-box-shadow:0 0 18px rgba(255,70,70,0.3);
 }
 }
