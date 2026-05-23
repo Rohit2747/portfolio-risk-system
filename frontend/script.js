@@ -63,6 +63,14 @@ const companyInitials = {
 };
 
 // ---------------------------------------------------------------
+// HELPER: Display risk level (MEDIUM → MODERATE for UI)
+// ---------------------------------------------------------------
+function displayRiskLevel(level) {
+  if (level === 'MEDIUM') return 'MODERATE';
+  return level;
+}
+
+// ---------------------------------------------------------------
 // GLOBAL STATE
 // ---------------------------------------------------------------
 let allRiskData    = [];   // full risk analysis from /risk-analysis
@@ -427,7 +435,7 @@ function renderComparisonClient(client) {
     </h3>
     <div class="comparison-metric">
       <span class="comparison-metric-label">Risk Level</span>
-      <span class="comparison-metric-value" style="color:${riskColor}">${client.riskLevel}</span>
+      <span class="comparison-metric-value" style="color:${riskColor}">${displayRiskLevel(client.riskLevel)}</span>
     </div>
     <div class="comparison-metric">
       <span class="comparison-metric-label">Portfolio Value</span>
@@ -543,7 +551,7 @@ async function exportAIReportPDF() {
     const riskColor = riskLevel === 'HIGH' ? [204, 51, 51] : riskLevel === 'MEDIUM' ? [204, 119, 0] : [0, 136, 68];
     doc.setFontSize(12);
     doc.setTextColor(...riskColor);
-    doc.text(`${riskLevel} RISK`, pageWidth - margin, y, { align: 'right' });
+    doc.text(`${displayRiskLevel(riskLevel)} RISK`, pageWidth - margin, y, { align: 'right' });
     y += 14;
 
     // METRICS ROW
@@ -705,7 +713,7 @@ function renderPortfolioCards(portfolios) {
             ${p.clientName}
           </h3>
           <p>Total Value: ${value}</p>
-          <p>Risk Level: <span class="${riskClass}">${riskLevel}</span></p>
+          <p>Risk Level: <span class="${riskClass}">${displayRiskLevel(riskLevel)}</span></p>
         </div>
       </div>`;
   });
@@ -938,7 +946,7 @@ function updateDashboardSummary(riskData) {
   // ---- AI Summary ----
   document.getElementById("ai-summary").textContent =
     `AI Engine detected ${breachedCount} of ${total} portfolios with active risk breaches. ` +
-    `${highCount} portfolios are HIGH risk, ${mediumCount} MEDIUM, ${lowCount} LOW. ` +
+    `${highCount} portfolios are HIGH risk, ${mediumCount} MODERATE, ${lowCount} LOW. ` +
     `Total portfolio value: ₹${(totalValue/10000000).toFixed(2)}Cr. ` +
     `Average daily performance: ${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}%.`;
 
@@ -1270,7 +1278,7 @@ function renderRiskPanel(riskData) {
         </div>
         <div class="risk-level-box">
           <p>Risk Level</p>
-          <span style="color:${riskColor}">${riskData.riskLevel}</span>
+          <span style="color:${riskColor}">${displayRiskLevel(riskData.riskLevel)}</span>
         </div>
       </div>
       <div class="risk-suggestion">
@@ -1295,7 +1303,7 @@ function renderRiskPanel(riskData) {
   }
 
   const healthStatus = document.getElementById("health-status");
-  healthStatus.textContent = riskData.riskLevel;
+  healthStatus.textContent = displayRiskLevel(riskData.riskLevel);
   healthStatus.style.color = riskColor;
   if (riskData.riskLevel === "HIGH") {
     healthStatus.style.background = "rgba(255,94,94,0.1)";
@@ -1384,7 +1392,7 @@ function buildLocalExplanation(riskData) {
     return `${riskData.clientName} portfolio is healthy with no risk threshold breaches.`;
   }
   return `${riskData.clientName} has ${riskData.breaches.length} active risk breach(es). ` +
-    `Risk level: ${riskData.riskLevel}. Portfolio value: ₹${(riskData.totalPortfolioValue||0).toLocaleString("en-IN")}.`;
+    `Risk level: ${displayRiskLevel(riskData.riskLevel)}. Portfolio value: ₹${(riskData.totalPortfolioValue||0).toLocaleString("en-IN")}.`;
 }
 
 function buildLocalInsight(riskData) {
