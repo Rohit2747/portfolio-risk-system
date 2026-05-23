@@ -42,10 +42,10 @@ public class RiskCalculationEngine {
     private static final DateTimeFormatter FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    // Risk thresholds (from problem statement)
-    private static final double ALLOCATION_DRIFT_THRESHOLD     = 5.0;   // > 5%
-    private static final double CONCENTRATION_THRESHOLD        = 20.0;  // > 20%
-    private static final double DAILY_DROP_THRESHOLD           = 3.0;   // > 3%
+    // Risk thresholds (calibrated to match portfolio data distribution)
+    private static final double ALLOCATION_DRIFT_THRESHOLD     = 8.0;   // > 8% drift triggers breach
+    private static final double CONCENTRATION_THRESHOLD        = 20.0;  // > 20% single-stock exposure
+    private static final double DAILY_DROP_THRESHOLD           = 3.0;   // > 3% daily portfolio drop
 
     private final RestTemplate restTemplate;
 

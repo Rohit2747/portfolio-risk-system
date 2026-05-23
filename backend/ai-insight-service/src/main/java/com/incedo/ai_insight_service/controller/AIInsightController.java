@@ -3,6 +3,7 @@ package com.incedo.ai_insight_service.controller;
 import com.incedo.ai_insight_service.events.SqsRiskEventConsumer;
 import com.incedo.ai_insight_service.model.AIInsightRequest;
 import com.incedo.ai_insight_service.model.AIInsightResponse;
+import com.incedo.ai_insight_service.model.RiskBreachDetail;
 import com.incedo.ai_insight_service.service.AIInsightEngine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -257,6 +258,30 @@ public class AIInsightController {
         request.setDailyChangePercent(data.containsKey("dailyChangePercent")
             ? ((Number) data.get("dailyChangePercent")).doubleValue() : 0.0);
         request.setTimestamp(data.getOrDefault("alertTimestamp", "").toString());
+
+        // Parse breaches list so AI engine can give specific explanations
+        List<RiskBreachDetail> breaches = new java.util.ArrayList<>();
+        if (data.containsKey("breaches") && data.get("breaches") instanceof List<?> rawBreaches) {
+            for (Object rawBreach : rawBreaches) {
+                if (rawBreach instanceof Map<?, ?> rawMap) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> bMap = (Map<String, Object>) rawMap;
+                    RiskBreachDetail breach = new RiskBreachDetail();
+                    breach.setBreachType(bMap.getOrDefault("breachType", "").toString());
+                    breach.setAffectedSymbol(
+                        bMap.containsKey("affectedSymbol") && bMap.get("affectedSymbol") != null
+                            ? bMap.get("affectedSymbol").toString() : null);
+                    breach.setActualValue(bMap.containsKey("actualValue")
+                        ? ((Number) bMap.get("actualValue")).doubleValue() : 0.0);
+                    breach.setThresholdValue(bMap.containsKey("thresholdValue")
+                        ? ((Number) bMap.get("thresholdValue")).doubleValue() : 0.0);
+                    breach.setDescription(bMap.getOrDefault("description", "").toString());
+                    breaches.add(breach);
+                }
+            }
+        }
+        request.setBreaches(breaches);
+
         return request;
     }
 

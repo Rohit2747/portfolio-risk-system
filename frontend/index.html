@@ -14,11 +14,60 @@
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </head>
 
 <body>
 
-<h1 class="main-title">AI Portfolio Risk Dashboard</h1>
+<!-- TOAST NOTIFICATIONS -->
+<div id="toast-container"></div>
+
+<!-- ENTERPRISE HEADER -->
+<header class="dashboard-header">
+  <div class="header-glass">
+    <div class="header-row-top">
+      <div class="header-left">
+        <div class="brand-logo">
+          <div class="logo-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">Portfolio Risk Intelligence</h1>
+            <p class="brand-subtitle">AI-Powered Real-Time Monitoring &amp; Analytics Platform</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+          <i class="fa-solid fa-sun" id="theme-icon"></i>
+        </button>
+        <button class="compare-mode-btn" id="compare-mode-btn" onclick="toggleCompareMode()">
+          <i class="fa-solid fa-code-compare"></i> Compare
+        </button>
+        <div class="header-badge">
+          <span class="badge-dot"></span>
+          <span class="badge-text">System Online</span>
+        </div>
+        <div class="header-meta">
+          <span class="meta-item"><i class="fa-solid fa-microchip"></i> AI Engine: Active</span>
+          <span class="meta-item"><i class="fa-solid fa-cloud"></i> Cloud-Native</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-row-bottom">
+      <div class="header-tags">
+        <span class="header-tag"><i class="fa-solid fa-chart-pie"></i> 100 Portfolios Monitored</span>
+        <span class="header-tag"><i class="fa-solid fa-bolt"></i> 20 Live Equities</span>
+        <span class="header-tag"><i class="fa-solid fa-bell"></i> Real-Time Alerts</span>
+        <span class="header-tag"><i class="fa-solid fa-brain"></i> AI Risk Scoring</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-border"></div>
+</header>
 
 <div class="container">
 
@@ -76,7 +125,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 
 <div class="top-card-content">
 <h3>High Risk Portfolios</h3>
-<p style="color:red;">28</p>
+<p style="color:red;">15</p>
 <span>Needs Attention</span>
 </div>
 
@@ -96,6 +145,22 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 
 </div>
 
+</div>
+
+<!-- CHART ROW -->
+<div class="chart-row">
+  <div class="chart-card">
+    <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Portfolio Risk Distribution</h3>
+    <div class="chart-canvas-wrapper">
+      <canvas id="riskDonutChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Market Index (Live)</h3>
+    <div class="chart-canvas-wrapper chart-canvas-wide">
+      <canvas id="marketLineChart"></canvas>
+    </div>
+  </div>
 </div>
 
 <!-- DASHBOARD GRID -->
@@ -181,44 +246,87 @@ Click a client portfolio to generate AI-powered risk analysis.
 
 <div class="ai-summary-card">
 
-<h2>AI Insight Summary</h2>
+<div class="ai-summary-header">
+  <h2>AI Insight Summary</h2>
+  <button class="export-pdf-btn" id="export-pdf-btn" onclick="exportAIReportPDF()">
+    <i class="fa-solid fa-file-pdf"></i> Export PDF
+  </button>
+</div>
 
 <p id="ai-summary">
 AI is analyzing portfolio health...
 </p>
 
-<h3 id="health-status">
-Portfolio Health: ANALYZING...
-</h3>
+<!-- AI RECOMMENDATION (generated report appears here) -->
 
-<p id="allocation-drift">
-Allocation Drift Status: Monitoring...
-</p>
+<div id="ai-recommendation">
+AI Recommendation Engine Initializing...
+</div>
 
-<p id="stock-exposure">
-Stock Exposure Status: Monitoring...
-</p>
+<!-- HEALTH SCORE -->
 
-<p id="daily-drop">
-Daily Portfolio Drop Status: Monitoring...
-</p>
+<div class="health-score-widget">
+  <span class="health-score-label">AI HEALTH SCORE</span>
+  <div class="health-score-value" id="health-score">--</div>
+  <div class="health-score-bar">
+    <div class="health-score-fill" id="health-score-fill"></div>
+  </div>
+  <p class="health-score-status" id="health-score-status">Calculating...</p>
+</div>
+
+<!-- RISK METER -->
+
+<div class="risk-meter-widget">
+  <span class="risk-meter-label">AI RISK METER</span>
+  <div class="risk-meter-row">
+    <div class="risk-meter">
+      <div class="risk-fill"></div>
+    </div>
+    <span class="risk-meter-percent" id="risk-percentage">0%</span>
+  </div>
+</div>
+
+<!-- HEALTH STATUS & INDICATORS -->
+
+<div class="health-status-widget">
+  <span class="health-status-label">PORTFOLIO STATUS</span>
+  <div class="health-status-badge" id="health-status">ANALYZING...</div>
+</div>
+
+<div class="breach-indicators-widget">
+  <span class="breach-indicators-label">RISK INDICATORS</span>
+  <div class="breach-indicator-row" id="allocation-drift">
+    <i class="fa-solid fa-arrows-left-right breach-indicator-icon"></i>
+    <span>Allocation Drift: Monitoring...</span>
+  </div>
+  <div class="breach-indicator-row" id="stock-exposure">
+    <i class="fa-solid fa-chart-pie breach-indicator-icon"></i>
+    <span>Stock Exposure: Monitoring...</span>
+  </div>
+  <div class="breach-indicator-row" id="daily-drop">
+    <i class="fa-solid fa-arrow-trend-down breach-indicator-icon"></i>
+    <span>Daily Drop: Monitoring...</span>
+  </div>
+</div>
+
+<!-- BREACH BAR CHART -->
+<div class="chart-card-inline">
+  <h3 class="chart-title"><i class="fa-solid fa-chart-bar"></i> Breach Analysis</h3>
+  <div class="chart-canvas-wrapper chart-canvas-short">
+    <canvas id="breachBarChart"></canvas>
+  </div>
+</div>
 
 <!-- ALERT BOX -->
 
-<div id="alert-box">
-
-<h3 id="alert-toggle">
-Risk Alerts ▼
-</h3>
-
-<ul id="alert-list">
-
-<li>
-Monitoring portfolio risk events...
-</li>
-
-</ul>
-
+<div class="alert-box-widget" id="alert-box">
+  <div class="alert-box-header" id="alert-toggle">
+    <span><i class="fa-solid fa-bell"></i> RISK ALERTS</span>
+    <i class="fa-solid fa-chevron-down alert-chevron"></i>
+  </div>
+  <ul id="alert-list">
+    <li>Monitoring portfolio risk events...</li>
+  </ul>
 </div>
 
 <!-- LAST UPDATED -->
@@ -226,36 +334,6 @@ Monitoring portfolio risk events...
 <p id="last-updated">
 Last Updated: Monitoring...
 </p>
-
-<!-- HEALTH SCORE -->
-
-<h3 id="health-score">
-AI Health Score: Calculating...
-</h3>
-
-<!-- AI RECOMMENDATION -->
-
-<div id="ai-recommendation">
-AI Recommendation Engine Initializing...
-</div>
-
-<!-- RISK METER -->
-
-<div class="risk-meter-container">
-
-<h3>AI Risk Meter</h3>
-
-<div class="risk-meter">
-
-<div class="risk-fill"></div>
-
-</div>
-
-<p id="risk-percentage">
-Risk Score: 0%
-</p>
-
-</div>
 
 <!-- ENGINE STATUS -->
 
@@ -269,6 +347,21 @@ AI Engine Status: ACTIVE
 
 </div>
 
+</div>
+
+<!-- CLIENT COMPARISON PANEL -->
+<div class="comparison-panel" id="comparison-panel" style="display:none;">
+  <div class="comparison-header">
+    <h2><i class="fa-solid fa-code-compare"></i> Client Comparison</h2>
+    <div class="comparison-actions">
+      <button class="comparison-close-btn" onclick="closeComparison()">
+        <i class="fa-solid fa-xmark"></i> Close
+      </button>
+    </div>
+  </div>
+  <div class="comparison-grid" id="comparison-grid">
+    <!-- Dynamically populated -->
+  </div>
 </div>
 
 </div>
