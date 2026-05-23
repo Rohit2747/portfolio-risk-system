@@ -122,41 +122,33 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     private List<Holding> buildConservativeHoldings(int clientId) {
         Random rand = new Random(clientId * 31L);
-        // Conservative: 8 equally-weighted stocks (~12.5% each)
-        // Targets set to match actual allocation closely (within 2-3%)
-        // This ensures NO DRIFT breach even with price fluctuations
-        int[][] stockPool = {
-            {13, 12}, // SBIN
-            {12, 13}, // ICICIBANK
-            {8,  12}, // HDFCBANK
-            {19, 13}, // SUNPHARMA
-            {11, 12}, // WIPRO
-            {17, 13}, // KOTAKBANK
-            {9,  12}, // INFY
-            {0,  13}, // AAPL
-        };
+        // Conservative: ONLY low-volatility stocks (vol <= 0.012)
+        // All 8 stocks have similar volatility so portfolio stays balanced
+        // Target = 12.5% each (100/8). Actual will stay within 3-4% of target.
+        // LOW volatility stocks: HDFCBANK(0.010), TCS(0.010), RELIANCE(0.012),
+        //   ICICIBANK(0.012), ASIANPAINT(0.012), KOTAKBANK(0.012), HINDUNILVR(0.008), MSFT(0.012)
+        int[] lowVolStocks = {8, 10, 7, 12, 15, 17, 16, 1};
+        // basePrices:        1678, 3912, 2985, 1087, 2895, 1834, 2534, 415
 
         List<Holding> holdings = new ArrayList<>();
-        int start = clientId % stockPool.length;
+        int start = clientId % lowVolStocks.length;
+        double portfolioSize = 100000.0;
 
         for (int i = 0; i < 8; i++) {
-            int idx = (start + i) % stockPool.length;
-            int stockIdx = stockPool[idx][0];
-            // Target allocation is what we expect the actual to be (~12-13%)
-            double target = stockPool[idx][1] + (rand.nextInt(2));
-
+            int stockIdx = lowVolStocks[(start + i) % lowVolStocks.length];
             String symbol = STOCK_INFO[stockIdx][0];
             String name = STOCK_INFO[stockIdx][1];
             int basePrice = Integer.parseInt(STOCK_INFO[stockIdx][2]);
 
-            // Calculate quantity to MATCH the target allocation of ~80,000 portfolio
-            int qty = Math.max(1, (int) Math.round((target / 100.0 * 80000) / basePrice));
+            // Each stock targets 12.5% of portfolio
+            double targetPercent = 12.5;
+            int qty = Math.max(1, (int) Math.round((targetPercent / 100.0 * portfolioSize) / basePrice));
 
-            // Set target to actual calculated allocation (so drift is ~0%)
-            double actualTarget = (qty * basePrice) / 80000.0 * 100.0;
-            actualTarget = Math.round(actualTarget * 10.0) / 10.0;
+            // Set target to the ACTUAL computed allocation so drift starts at 0%
+            double actualPercent = (qty * basePrice) / portfolioSize * 100.0;
+            actualPercent = Math.round(actualPercent * 10.0) / 10.0;
 
-            holdings.add(new Holding(symbol, name, qty, actualTarget));
+            holdings.add(new Holding(symbol, name, qty, actualPercent));
         }
         return holdings;
     }
@@ -168,40 +160,31 @@ public class PortfolioDataStore {
     // ---------------------------------------------------------------
     private List<Holding> buildBalancedHoldings(int clientId) {
         Random rand = new Random(clientId * 47L);
-        // Balanced: 10 stocks with weights around 10% each
-        // Targets set to match actual so NO breaches occur
-        int[][] stockPool = {
-            {7,  10}, // RELIANCE
-            {8,  10}, // HDFCBANK
-            {10, 10}, // TCS
-            {1,  10}, // MSFT
-            {9,  10}, // INFY
-            {12, 10}, // ICICIBANK
-            {13, 10}, // SBIN
-            {18, 10}, // LT
-            {0,  10}, // AAPL
-            {11, 10}, // WIPRO
-        };
+        // Balanced: 10 low-to-medium volatility stocks at 10% each
+        // Using ONLY stocks with volatility <= 0.015
+        // This ensures drift stays well under 8% threshold
+        int[] balancedStocks = {7, 8, 10, 1, 12, 13, 15, 17, 16, 18};
+        // RELIANCE, HDFCBANK, TCS, MSFT, ICICIBANK, SBIN, ASIANPAINT, KOTAKBANK, HINDUNILVR, LT
 
         List<Holding> holdings = new ArrayList<>();
         int start = (clientId - 31) % 4;
+        double portfolioSize = 120000.0;
 
         for (int i = 0; i < 10; i++) {
-            int idx = (start + i) % stockPool.length;
-            int stockIdx = stockPool[idx][0];
-            double target = stockPool[idx][1] + (rand.nextInt(2));
-
+            int stockIdx = balancedStocks[(start + i) % balancedStocks.length];
             String symbol = STOCK_INFO[stockIdx][0];
             String name = STOCK_INFO[stockIdx][1];
             int basePrice = Integer.parseInt(STOCK_INFO[stockIdx][2]);
 
-            int qty = Math.max(1, (int) Math.round((target / 100.0 * 120000) / basePrice));
+            // Each stock targets 10% of portfolio
+            double targetPercent = 10.0;
+            int qty = Math.max(1, (int) Math.round((targetPercent / 100.0 * portfolioSize) / basePrice));
 
-            // Set target to match actual allocation (prevents drift breach)
-            double actualTarget = (qty * basePrice) / 120000.0 * 100.0;
-            actualTarget = Math.round(actualTarget * 10.0) / 10.0;
+            // Set target to ACTUAL computed allocation
+            double actualPercent = (qty * basePrice) / portfolioSize * 100.0;
+            actualPercent = Math.round(actualPercent * 10.0) / 10.0;
 
-            holdings.add(new Holding(symbol, name, qty, actualTarget));
+            holdings.add(new Holding(symbol, name, qty, actualPercent));
         }
         return holdings;
     }
@@ -216,34 +199,39 @@ public class PortfolioDataStore {
     private List<Holding> buildGrowthHoldings(int clientId) {
         Random rand = new Random(clientId * 67L);
 
-        // 15 possible drift-causing configs: {stockIndex, baseQty, target%}
-        // Quantities kept low for expensive stocks to prevent >20% concentration
-        // Expensive stocks with moderate shares, low target → DRIFT
-        // Cheap stocks with few shares, high target → DRIFT
+        // Growth portfolios: intentional ALLOCATION_DRIFT but NO concentration (all < 20%)
+        // Strategy: use ONLY mid-to-cheap stocks (< ₹2000) with 10 holdings each
+        // Some holdings have actual% HIGH but target% LOW → DRIFT
+        // Some holdings have actual% LOW but target% HIGH → DRIFT
+        // With 10 holdings of similar-priced stocks, no single one exceeds 15%
+        //
+        // Each config: {stockIndex, qty, fakeTarget%}
         int[][] allDriftConfigs = {
-            {10, 4,  3},   // TCS (3912) → high value, very low target → guaranteed DRIFT >8%
-            {14, 2,  3},   // BAJFINANCE (7285) → high value, very low target → DRIFT
-            {2,  9,  3},   // NVDA (875) → high value, very low target → DRIFT
-            {7,  3,  3},   // RELIANCE (2985) → high value, very low target → DRIFT
-            {18, 3,  3},   // LT (3478) → high value, very low target → DRIFT
-            {15, 3,  3},   // ASIANPAINT (2895) → high value, very low target → DRIFT
-            {0,  5, 20},   // AAPL (187) → low value, very high target → DRIFT
-            {1,  3, 20},   // MSFT (415) → low value, very high target → DRIFT
-            {3,  5, 20},   // AMZN (182) → low value, very high target → DRIFT
-            {4,  5, 20},   // GOOGL (175) → low value, very high target → DRIFT
-            {6,  5, 20},   // TSLA (172) → low value, very high target → DRIFT
-            {9,  5, 18},   // INFY (183) → low value, high target → DRIFT
-            {8,  3, 15},   // HDFCBANK → moderate value, high target → DRIFT
-            {12, 4, 15},   // ICICIBANK → moderate value, high target → DRIFT
-            {13, 5, 15},   // SBIN → moderate value, high target → DRIFT
+            // Stocks with qty that gives ~15% actual, target says 3% → drift ~12% ✓
+            {12, 8,  3},   // ICICIBANK (1087×8=8696) ~15% actual, target 3% → drift 12%
+            {13, 10, 3},   // SBIN (815×10=8150) ~14% actual, target 3% → drift 11%
+            {8,  5,  3},   // HDFCBANK (1678×5=8390) ~14% actual, target 3% → drift 11%
+            {11, 14, 3},   // WIPRO (538×14=7532) ~13% actual, target 3% → drift 10%
+            {19, 5,  3},   // SUNPHARMA (1567×5=7835) ~13% actual, target 3% → drift 10%
+            {17, 4,  3},   // KOTAKBANK (1834×4=7336) ~13% actual, target 3% → drift 10%
+            // Stocks with low qty giving ~2% actual, target says 20% → drift ~18% ✓
+            {0,  6, 20},   // AAPL (187×6=1122) ~2% actual, target 20% → drift 18%
+            {3,  6, 20},   // AMZN (182×6=1092) ~2% actual, target 20% → drift 18%
+            {4,  6, 20},   // GOOGL (175×6=1050) ~2% actual, target 20% → drift 18%
+            {6,  6, 20},   // TSLA (172×6=1032) ~2% actual, target 20% → drift 18%
+            {9,  6, 20},   // INFY (183×6=1098) ~2% actual, target 20% → drift 18%
+            {1,  3, 20},   // MSFT (415×3=1245) ~2% actual, target 20% → drift 18%
+            {5,  2, 20},   // META (505×2=1010) ~2% actual, target 20% → drift 18%
+            {2,  1, 15},   // NVDA (875×1=875) ~1.5% actual, target 15% → drift 13.5%
+            {18, 1, 15},   // LT (3478×1=3478) ~6% actual, target 15% → drift 9%
         };
 
-        // Each client gets a different selection of 8 stocks from the 15
-        int startOffset = ((clientId - 61) * 3) % 15;
+        // Each client gets 10 stocks from the 15 configs (more holdings = safer distribution)
+        int startOffset = ((clientId - 61) * 2) % 15;
         List<Holding> holdings = new ArrayList<>();
 
-        for (int i = 0; i < 8; i++) {
-            int cfgIdx = (startOffset + i * 2) % allDriftConfigs.length;
+        for (int i = 0; i < 10; i++) {
+            int cfgIdx = (startOffset + i) % allDriftConfigs.length;
             int stockIdx = allDriftConfigs[cfgIdx][0];
             int baseQty = allDriftConfigs[cfgIdx][1];
             double target = allDriftConfigs[cfgIdx][2];
@@ -251,11 +239,12 @@ public class PortfolioDataStore {
             String symbol = STOCK_INFO[stockIdx][0];
             String name = STOCK_INFO[stockIdx][1];
 
-            // Client-specific variation
-            int qty = baseQty + rand.nextInt(4) - 1;
+            // Minimal client variation (±1 share for stocks with qty > 5)
+            int qty = baseQty;
+            if (baseQty > 5) {
+                qty = baseQty + rand.nextInt(3) - 1;
+            }
             if (qty < 1) qty = 1;
-            target += rand.nextInt(3) - 1;
-            if (target < 3) target = 3;
 
             holdings.add(new Holding(symbol, name, qty, target));
         }
