@@ -221,21 +221,21 @@ public class PortfolioDataStore {
         // Expensive stocks with moderate shares, low target → DRIFT
         // Cheap stocks with few shares, high target → DRIFT
         int[][] allDriftConfigs = {
-            {10, 3,  7},   // TCS (3912) → moderate value, low target → DRIFT
-            {14, 1,  5},   // BAJFINANCE (7285) → moderate value, low target → DRIFT
-            {2,  8,  6},   // NVDA (875) → moderate value, low target → DRIFT
-            {7,  2,  6},   // RELIANCE (2985) → moderate value, low target → DRIFT
-            {18, 2,  6},   // LT (3478) → moderate value, low target → DRIFT
-            {15, 2,  6},   // ASIANPAINT (2895) → moderate value, low target → DRIFT
-            {0, 12, 18},   // AAPL (187) → low value, high target → DRIFT
-            {1,  5, 16},   // MSFT (415) → low value, high target → DRIFT
-            {3, 12, 16},   // AMZN (182) → low value, high target → DRIFT
-            {4, 12, 16},   // GOOGL (175) → low value, high target → DRIFT
-            {6, 12, 16},   // TSLA (172) → low value, high target → DRIFT
-            {9, 12, 14},   // INFY (183) → low value, high target → DRIFT
-            {8,  4, 12},   // HDFCBANK → moderate
-            {12, 5,  8},   // ICICIBANK → moderate
-            {13, 7,  7},   // SBIN → moderate
+            {10, 4,  3},   // TCS (3912) → high value, very low target → guaranteed DRIFT >8%
+            {14, 2,  3},   // BAJFINANCE (7285) → high value, very low target → DRIFT
+            {2,  9,  3},   // NVDA (875) → high value, very low target → DRIFT
+            {7,  3,  3},   // RELIANCE (2985) → high value, very low target → DRIFT
+            {18, 3,  3},   // LT (3478) → high value, very low target → DRIFT
+            {15, 3,  3},   // ASIANPAINT (2895) → high value, very low target → DRIFT
+            {0,  5, 20},   // AAPL (187) → low value, very high target → DRIFT
+            {1,  3, 20},   // MSFT (415) → low value, very high target → DRIFT
+            {3,  5, 20},   // AMZN (182) → low value, very high target → DRIFT
+            {4,  5, 20},   // GOOGL (175) → low value, very high target → DRIFT
+            {6,  5, 20},   // TSLA (172) → low value, very high target → DRIFT
+            {9,  5, 18},   // INFY (183) → low value, high target → DRIFT
+            {8,  3, 15},   // HDFCBANK → moderate value, high target → DRIFT
+            {12, 4, 15},   // ICICIBANK → moderate value, high target → DRIFT
+            {13, 5, 15},   // SBIN → moderate value, high target → DRIFT
         };
 
         // Each client gets a different selection of 8 stocks from the 15
