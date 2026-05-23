@@ -17,10 +17,10 @@ import java.util.Random;
  * their clientId as a seed — ensuring deterministic but varied output.
  *
  * Risk distribution:
- *   Clients 1–25  : Conservative → LOW risk (no breaches)
- *   Clients 26–50 : Balanced → LOW risk (no breaches)
- *   Clients 51–75 : Growth → MEDIUM risk (allocation drift only)
- *   Clients 76–100: Aggressive → HIGH risk (concentration + drift)
+ *   Clients 1–30  : Conservative → LOW risk (no breaches)
+ *   Clients 31–60 : Balanced → LOW risk (no breaches)
+ *   Clients 61–85 : Growth → MODERATE risk (allocation drift only)
+ *   Clients 86–100: Aggressive → HIGH risk (concentration + drift)
  *
  * Base prices used for calibration:
  *   AAPL=187, MSFT=415, NVDA=875, AMZN=182, GOOGL=175, META=505, TSLA=172
@@ -103,11 +103,11 @@ public class PortfolioDataStore {
     }
 
     private List<Holding> generateHoldingsForClient(int clientId) {
-        if (clientId <= 25) {
+        if (clientId <= 30) {
             return buildConservativeHoldings(clientId);
-        } else if (clientId <= 50) {
+        } else if (clientId <= 60) {
             return buildBalancedHoldings(clientId);
-        } else if (clientId <= 75) {
+        } else if (clientId <= 85) {
             return buildGrowthHoldings(clientId);
         } else {
             return buildAggressiveHoldings(clientId);
@@ -179,7 +179,7 @@ public class PortfolioDataStore {
             {11, 10}, // WIPRO
         };
 
-        int start = (clientId - 26) % 4;
+        int start = (clientId - 31) % 4;
         List<Holding> holdings = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
@@ -232,7 +232,7 @@ public class PortfolioDataStore {
         };
 
         // Each client gets a different selection of 8 stocks from the 15
-        int startOffset = ((clientId - 51) * 3) % 15;
+        int startOffset = ((clientId - 61) * 3) % 15;
         List<Holding> holdings = new ArrayList<>();
 
         for (int i = 0; i < 8; i++) {
@@ -280,7 +280,7 @@ public class PortfolioDataStore {
         };
 
         // Pick pair based on clientId
-        int pairIdx = (clientId - 76) % 10;
+        int pairIdx = (clientId - 86) % 10;
         int[][] pair = dominantPairs[pairIdx];
 
         int dom1StockIdx = pair[0][0];
