@@ -222,7 +222,9 @@ public class SqsRiskEventConsumer {
         List<RiskBreachDetail> breaches = new ArrayList<>();
         if (data.containsKey("breaches") && data.get("breaches") instanceof List<?> rawBreaches) {
             for (Object rawBreach : rawBreaches) {
-                if (rawBreach instanceof Map<?, ?> bMap) {
+                if (rawBreach instanceof Map<?, ?>) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> bMap = (Map<String, Object>) rawBreach;
                     RiskBreachDetail breach = new RiskBreachDetail();
                     breach.setBreachType(bMap.getOrDefault("breachType", "").toString());
                     breach.setAffectedSymbol(
