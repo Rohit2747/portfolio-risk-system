@@ -74,9 +74,11 @@ function renderPortfolioCards(portfolios) {
     const value      = p.portfolioValue > 0
       ? `₹${p.portfolioValue.toLocaleString("en-IN", {maximumFractionDigits: 2})}`
       : "Loading...";
+    const pulseClass = riskClass === "high" ? "high-risk-pulse" : "";
+    const displayRisk = p.riskLevel === "MEDIUM" ? "MODERATE" : (p.riskLevel || "CALCULATING...");
 
     html += `
-      <div class="service-item portfolio-card"
+      <div class="service-item portfolio-card ${pulseClass}"
            onclick="selectClient(${p.clientId}, '${p.clientName}', '${p.riskLevel || "UNKNOWN"}', ${p.portfolioValue || 0}, event)">
         <div>
           <h3>
@@ -86,7 +88,7 @@ function renderPortfolioCards(portfolios) {
             ${p.clientName}
           </h3>
           <p>Total Value: ${value}</p>
-          <p>Risk Level: <span class="${riskClass}">${p.riskLevel || "CALCULATING..."}</span></p>
+          <p>Risk: <span class="risk-badge ${riskClass}">${displayRisk}</span></p>
         </div>
       </div>`;
   });
