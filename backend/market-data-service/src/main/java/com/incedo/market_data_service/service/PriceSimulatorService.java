@@ -64,6 +64,15 @@ public class PriceSimulatorService {
     // In-memory price store: symbol -> current marketData
     private final Map<String, marketData> priceMap = new ConcurrentHashMap<>();
 
+    // Tick counter for market stress event timing
+    private int tickCount = 0;
+
+    // Stocks that will experience bearish pressure after warm-up period
+    private static final Set<String> STRESS_STOCKS = Set.of("TSLA", "NVDA");
+
+    // Number of ticks before market stress begins (warm-up period)
+    private static final int STRESS_START_TICK = 20;
+
     private final Random random = new Random();
     private final PriceEventPublisher priceEventPublisher;
 
@@ -97,6 +106,7 @@ public class PriceSimulatorService {
      */
     @Scheduled(fixedDelay = 5000)
     public void simulatePriceTick() {
+        tickCount++;
         String now = LocalDateTime.now().format(FORMATTER);
 
         for (Object[] config : EQUITY_CONFIG) {
@@ -109,7 +119,15 @@ public class PriceSimulatorService {
             double prev    = current.getCurrentPrice();
             double opening = current.getOpeningPrice();
 
-            double change   = (random.nextDouble() * 2 - 1) * vol;
+            double change;
+            // After warm-up period, apply sustained downward bias to volatile stocks
+            // This simulates a market stress event that can trigger DAILY_DROP breaches
+            if (tickCount > STRESS_START_TICK && STRESS_STOCKS.contains(symbol)) {
+                change = (random.nextDouble() * 1.3 - 1) * vol * 1.5;
+            } else {
+                change = (random.nextDouble() * 2 - 1) * vol;
+            }
+
             double newPrice = Math.round(prev * (1 + change) * 100.0) / 100.0;
             if (newPrice < opening * 0.10) newPrice = opening * 0.10;
 
