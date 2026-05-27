@@ -1,0 +1,8 @@
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/model/AIInsightResponse.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/events/SqsRiskEventConsumer.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/model/RiskBreachDetail.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/AIInsightServiceApplication.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/service/AIInsightEngine.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/config/AwsConfig.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/controller/AIInsightController.java
+/Users/srinivasboyinapalli/Desktop/portfolio-risk-system/backend/ai-insight-service/src/main/java/com/incedo/ai_insight_service/model/AIInsightRequest.java

@@ -1,0 +1,10 @@
+com/incedo/ai_insight_service/config/AwsConfig.class
+com/incedo/ai_insight_service/controller/AIInsightController.class
+com/incedo/ai_insight_service/controller/AIInsightController$1.class
+com/incedo/ai_insight_service/model/AIInsightRequest.class
+com/incedo/ai_insight_service/model/AIInsightResponse.class
+com/incedo/ai_insight_service/service/AIInsightEngine.class
+com/incedo/ai_insight_service/events/SqsRiskEventConsumer.class
+com/incedo/ai_insight_service/model/RiskBreachDetail.class
+com/incedo/ai_insight_service/AIInsightServiceApplication.class
+com/incedo/ai_insight_service/controller/AIInsightController$2.class
