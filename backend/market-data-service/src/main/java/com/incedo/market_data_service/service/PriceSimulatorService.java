@@ -67,8 +67,8 @@ public class PriceSimulatorService {
     // Tick counter for market stress event timing
     private int tickCount = 0;
 
-    // Stocks that will experience bearish pressure after warm-up period
-    private static final Set<String> STRESS_STOCKS = Set.of("TSLA", "NVDA");
+    // Stocks that will experience directional pressure after warm-up period
+    private static final Set<String> STRESS_STOCKS = Set.of("TSLA", "NVDA", "META");
 
     // Number of ticks before market stress begins (warm-up period)
     private static final int STRESS_START_TICK = 20;
@@ -120,10 +120,15 @@ public class PriceSimulatorService {
             double opening = current.getOpeningPrice();
 
             double change;
-            // After warm-up period, apply sustained downward bias to volatile stocks
-            // This simulates a market stress event that can trigger DAILY_DROP breaches
+            // After warm-up period, apply directional bias to stress stocks
             if (tickCount > STRESS_START_TICK && STRESS_STOCKS.contains(symbol)) {
-                change = (random.nextDouble() * 1.3 - 1) * vol * 1.5;
+                if ("META".equals(symbol)) {
+                    // Strong bullish bias for META — triggers ALLOCATION_DRIFT
+                    change = (random.nextDouble() * 0.8 + 0.2) * vol * 2.0;
+                } else {
+                    // Bearish bias for TSLA/NVDA — triggers DAILY_DROP
+                    change = (random.nextDouble() * 1.3 - 1) * vol * 1.5;
+                }
             } else {
                 change = (random.nextDouble() * 2 - 1) * vol;
             }
